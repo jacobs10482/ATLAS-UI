@@ -46,11 +46,14 @@ public class MainActivity extends AppCompatActivity {
         progressBarView = findViewById(R.id.progressBarView);
 
         slides = new ArrayList<>();
-        slides.add(new Slide("Preparation", "Prepare the patient...", R.drawable.example, false));
-        slides.add(new Slide("Positioning", "Position the patient...", R.drawable.example2, false));
-        slides.add(new Slide("Setup", "Set up the equipment...", R.drawable.example, false));
-        slides.add(new Slide("Calibration", "Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue.", R.drawable.example, false));
-        slides.add(new Slide("3D View", "Interact with the 3D model.", R.drawable.example, true));
+        slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram, false));
+        slides.add(new Slide("Burr Hole", "Create a Burr hole at Kocher's point using a surgical screw driver. Then attach ATLAS at the Burr hole.", R.drawable.kochers_point_diagram, false));
+        slides.add(new Slide("Calibration", "Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue", R.drawable.example, true));
+        slides.add(new Slide("Fine Tune", "Trace the surface of the patient’s skin for about 15 seconds, ensuring to capture different features of the head.", R.drawable.example, true));
+        slides.add(new Slide("Guide EVD", "Attach the EVD to the effector at 12cm and follow visual guidance to place the drain.", R.drawable.example, true));
+        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nIf draining, plug drain and proceed.  Otherwise, return to step 6.\n", R.drawable.insertion_diagram, false));
+        slides.add(new Slide("Unmount", "Remove EVD from effector.\n\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.draining_diagram, false));
+        slides.add(new Slide("Closure", "Attach trocar to end of EVD and tunnel about 6 cm posterior to the burr hole. Staple drain to fixate and connect drainage bag.", R.drawable.cleaning_diagram, false));
 
         leftButton.setOnClickListener(v -> {
             handleLeft();
