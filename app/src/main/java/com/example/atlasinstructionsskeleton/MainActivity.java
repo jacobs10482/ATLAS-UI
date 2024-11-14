@@ -1,9 +1,14 @@
 package com.example.atlasinstructionsskeleton;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -22,13 +27,18 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private View interactiveView;
     private TextView slideCounterTextView;
-    private Button leftButton;
-    private Button rightButton;
-
-    private View progressBarView;
+    private ImageButton leftButton;
+    private ImageButton rightButton;
+    private LinearLayout progressBarLayout;
+    private ProgressBar progressBar;
+    private TextView progressPercentage;
 
     private List<Slide> slides;
     private int currentSlideIndex = 0;
+    private double currentProgress = 0;
+    private int pointsTouched = 0;
+    private int totalPoints = 3;
+    private double percentage = 100.0 / totalPoints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +53,9 @@ public class MainActivity extends AppCompatActivity {
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
         leftButton = findViewById(R.id.leftButton);
         rightButton = findViewById(R.id.rightButton);
-        progressBarView = findViewById(R.id.progressBarView);
+        progressBarLayout = findViewById(R.id.progressBarlayout);
+        progressBar = findViewById(R.id.progressBar);
+        progressPercentage = findViewById(R.id.progressPercentage);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram, false));
@@ -76,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentSlideIndex > 0) {
             currentSlideIndex--;
             updateSlide();
+            resetProgress();
         }
     }
 
@@ -83,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentSlideIndex < slides.size() - 1) {
             currentSlideIndex++;
             updateSlide();
+            resetProgress();
         }
     }
 
@@ -96,11 +110,12 @@ public class MainActivity extends AppCompatActivity {
         if (currentSlide.showInteractive) {
             imageView.setVisibility(View.GONE);
             interactiveView.setVisibility(View.VISIBLE);
-            progressBarView.setVisibility(View.VISIBLE);
+            progressBarLayout.setVisibility(View.VISIBLE);
+            interactiveView.setOnClickListener(v -> handlePointTouch());
         } else {
             imageView.setVisibility(View.VISIBLE);
             interactiveView.setVisibility(View.GONE);
-            progressBarView.setVisibility(View.INVISIBLE);
+            progressBarLayout.setVisibility(View.INVISIBLE);
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
             } else {
@@ -109,6 +124,30 @@ public class MainActivity extends AppCompatActivity {
         }
 
         slideCounterTextView.setText("Step " + currentStep + "/" + slides.size());
+    }
+
+    private void handlePointTouch() {
+        pointsTouched++;
+        if (pointsTouched < totalPoints) {
+            updateProgress();
+        } else if (pointsTouched == totalPoints) {
+            updateProgress();
+            new Handler(Looper.getMainLooper()).postDelayed(this::handleRight, 500);
+        }
+    }
+
+    private void updateProgress() {
+        currentProgress += percentage;
+        int progress = (int)Math.floor(currentProgress+0.5);
+        progressBar.setProgress(progress);
+        progressPercentage.setText(progress + "%");
+    }
+
+    private void resetProgress() {
+        currentProgress = 0;
+        pointsTouched = 0;
+        progressBar.setProgress(0);
+        progressPercentage.setText(0 + "%");
     }
 
 }
