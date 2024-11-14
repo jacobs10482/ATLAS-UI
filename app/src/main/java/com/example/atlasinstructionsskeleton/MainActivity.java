@@ -1,9 +1,15 @@
 package com.example.atlasinstructionsskeleton;
 
+import android.app.Dialog;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -22,13 +28,19 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private View interactiveView;
     private TextView slideCounterTextView;
-    private Button leftButton;
-    private Button rightButton;
+    private ImageButton leftButton;
+    private ImageButton rightButton;
+    private LinearLayout progressBarLayout;
+    private ProgressBar progressBar;
+    private TextView progressPercentage;
 
-    private View progressBarView;
-
+    private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
+    private double currentProgress = 0;
+    private int pointsTouched = 0;
+    private int totalPoints = 3;
+    private double percentage = 100.0 / totalPoints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +55,10 @@ public class MainActivity extends AppCompatActivity {
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
         leftButton = findViewById(R.id.leftButton);
         rightButton = findViewById(R.id.rightButton);
-        progressBarView = findViewById(R.id.progressBarView);
+        progressBarLayout = findViewById(R.id.progressBarlayout);
+        progressBar = findViewById(R.id.progressBar);
+        progressPercentage = findViewById(R.id.progressPercentage);
+        exitButton = findViewById(R.id.ExitButton);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram, false));
@@ -63,6 +78,10 @@ public class MainActivity extends AppCompatActivity {
             handleRight();
         });
 
+        exitButton.setOnClickListener(v -> {
+            setDialog(0);
+        });
+
         updateSlide();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -76,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentSlideIndex > 0) {
             currentSlideIndex--;
             updateSlide();
+            resetProgress();
         }
     }
 
@@ -83,9 +103,54 @@ public class MainActivity extends AppCompatActivity {
         if (currentSlideIndex < slides.size() - 1) {
             currentSlideIndex++;
             updateSlide();
+            resetProgress();
         }
     }
 
+    private void setDialog(int x){
+        Dialog dialog = new Dialog(this);
+        if (x == 0){
+            dialog.setContentView(R.layout.error1);
+
+            Button button1 = dialog.findViewById(R.id.dialog_button_1);
+            Button button2 = dialog.findViewById(R.id.dialog_button_2);
+
+            button1.setOnClickListener(new View.OnClickListener() {         //needs to return to procedure selection screen
+                @Override
+                public void onClick(View v) {
+                    setDialog(1);
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
+        } else if (x == 1){
+            dialog.setContentView(R.layout.error2);
+
+            Button button1 = dialog.findViewById(R.id.dialog_close_button);
+            Button button2 = dialog.findViewById(R.id.dialog_redo_button);
+
+            button1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {         //needs to goto redo calibration
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
+        }
+    }
     private void updateSlide() {
         Slide currentSlide = slides.get(currentSlideIndex);
         int currentStep = currentSlideIndex + 1;
@@ -96,11 +161,12 @@ public class MainActivity extends AppCompatActivity {
         if (currentSlide.showInteractive) {
             imageView.setVisibility(View.GONE);
             interactiveView.setVisibility(View.VISIBLE);
-            progressBarView.setVisibility(View.VISIBLE);
+            progressBarLayout.setVisibility(View.VISIBLE);
+            interactiveView.setOnClickListener(v -> handlePointTouch());
         } else {
             imageView.setVisibility(View.VISIBLE);
             interactiveView.setVisibility(View.GONE);
-            progressBarView.setVisibility(View.INVISIBLE);
+            progressBarLayout.setVisibility(View.INVISIBLE);
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
             } else {
@@ -109,6 +175,30 @@ public class MainActivity extends AppCompatActivity {
         }
 
         slideCounterTextView.setText("Step " + currentStep + "/" + slides.size());
+    }
+
+    private void handlePointTouch() {
+        pointsTouched++;
+        if (pointsTouched < totalPoints) {
+            updateProgress();
+        } else if (pointsTouched == totalPoints) {
+            updateProgress();
+            new Handler(Looper.getMainLooper()).postDelayed(this::handleRight, 500);
+        }
+    }
+
+    private void updateProgress() {
+        currentProgress += percentage;
+        int progress = (int)Math.floor(currentProgress+0.5);
+        progressBar.setProgress(progress);
+        progressPercentage.setText(progress + "%");
+    }
+
+    private void resetProgress() {
+        currentProgress = 0;
+        pointsTouched = 0;
+        progressBar.setProgress(0);
+        progressPercentage.setText(0 + "%");
     }
 
 }
