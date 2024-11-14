@@ -18,6 +18,7 @@
             android:paddingHorizontal="20dp"
             android:layout_marginVertical="10dp">
             <Button
+                android:id="@+id/ExitButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:textSize="30dp"

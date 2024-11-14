@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:layout_gravity="center"
+    android:padding="16dp"
+    android:background="@android:color/white"
+    android:elevation="4dp">
+
+    <!-- Close Button (X) in the top-right corner -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/dialog_close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="X"
+            android:textSize="64sp"
+            android:textColor="@android:color/black"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="-8dp"
+            android:layout_marginRight="0dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless" />
+    </RelativeLayout>
+
+    <!-- TextView for the message in the dialog -->
+    <TextView
+        android:id="@+id/dialog_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registration Error Exceeds 2mm Safe Limit! \nPlease Redo Calibration"
+        android:textSize="40sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="16dp"
+        android:gravity="center" />
+
+    <Button
+        android:id="@+id/dialog_redo_button"
+        android:layout_width="175sp"
+        android:layout_height="95sp"
+        android:text="Redo"
+        android:textSize="35sp"
+        android:background="@drawable/button_red_border"
+        android:textColor="@android:color/black"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center" />
+</LinearLayout>

@@ -1,5 +1,6 @@
 package com.example.atlasinstructionsskeleton;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView progressPercentage;
 
+    private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
     private double currentProgress = 0;
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         progressBarLayout = findViewById(R.id.progressBarlayout);
         progressBar = findViewById(R.id.progressBar);
         progressPercentage = findViewById(R.id.progressPercentage);
+        exitButton = findViewById(R.id.ExitButton);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram, false));
@@ -73,6 +76,10 @@ public class MainActivity extends AppCompatActivity {
 
         rightButton.setOnClickListener(v -> {
             handleRight();
+        });
+
+        exitButton.setOnClickListener(v -> {
+            setDialog(0);
         });
 
         updateSlide();
@@ -100,6 +107,50 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setDialog(int x){
+        Dialog dialog = new Dialog(this);
+        if (x == 0){
+            dialog.setContentView(R.layout.error1);
+
+            Button button1 = dialog.findViewById(R.id.dialog_button_1);
+            Button button2 = dialog.findViewById(R.id.dialog_button_2);
+
+            button1.setOnClickListener(new View.OnClickListener() {         //needs to return to procedure selection screen
+                @Override
+                public void onClick(View v) {
+                    setDialog(1);
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
+        } else if (x == 1){
+            dialog.setContentView(R.layout.error2);
+
+            Button button1 = dialog.findViewById(R.id.dialog_close_button);
+            Button button2 = dialog.findViewById(R.id.dialog_redo_button);
+
+            button1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {         //needs to goto redo calibration
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
+        }
+    }
     private void updateSlide() {
         Slide currentSlide = slides.get(currentSlideIndex);
         int currentStep = currentSlideIndex + 1;
