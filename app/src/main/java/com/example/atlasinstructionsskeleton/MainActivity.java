@@ -34,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView progressPercentage;
 
+    private LinearLayout registrationErrorLayout;
+    private LinearLayout registrationErrorBox;
+    private TextView registrationErrorValue;
+
     private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
@@ -41,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private int pointsTouched = 0;
     private int totalPoints = 3;
     private double percentage = 100.0 / totalPoints;
+    private double errorValue = 2.1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,15 +64,18 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         progressPercentage = findViewById(R.id.progressPercentage);
         exitButton = findViewById(R.id.ExitButton);
+        registrationErrorLayout = findViewById(R.id.registrationErrorLayout);
+        registrationErrorBox = findViewById(R.id.registrationErrorBox);
+        registrationErrorValue = findViewById(R.id.registrationErrorValue);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram, false));
         slides.add(new Slide("Burr Hole", "Create a Burr hole at Kocher's point using a surgical screw driver. Then attach ATLAS at the Burr hole.", R.drawable.kochers_point_diagram, false));
-        slides.add(new Slide("Calibration", "Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue", R.drawable.example, true));
-        slides.add(new Slide("Fine Tune", "Trace the surface of the patient’s skin for about 15 seconds, ensuring to capture different features of the head.", R.drawable.example, true));
-        slides.add(new Slide("Guide EVD", "Attach the EVD to the effector at 12cm and follow visual guidance to place the drain.", R.drawable.example, true));
-        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nIf draining, plug drain and proceed.  Otherwise, return to step 6.\n", R.drawable.insertion_diagram, false));
-        slides.add(new Slide("Unmount", "Remove EVD from effector.\n\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.draining_diagram, false));
+        slides.add(new Slide("Calibration", "Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue", R.drawable.example_a, true));
+        slides.add(new Slide("Fine Tune", "Trace the surface of the patient’s skin for about 15 seconds, ensuring to capture different features of the head.", R.drawable.example_a, true));
+        slides.add(new Slide("Guide EVD", "Attach the EVD to the effector at 12cm and follow visual guidance to place the drain.", R.drawable.example_a, true));
+        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nIf draining, plug drain and proceed.  Otherwise, return to step 6.\n", R.drawable.draining_diagram, false));
+        slides.add(new Slide("Unmount", "Remove EVD from effector.\n\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.insertion_diagram, false));
         slides.add(new Slide("Closure", "Attach trocar to end of EVD and tunnel about 6 cm posterior to the burr hole. Staple drain to fixate and connect drainage bag.", R.drawable.cleaning_diagram, false));
 
         leftButton.setOnClickListener(v -> {
@@ -145,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     dialog.dismiss();
+                    handleLeft();
                 }
             });
 
@@ -158,15 +167,24 @@ public class MainActivity extends AppCompatActivity {
         titleTextView.setText("Step " + currentStep + ": " + currentSlide.title);
         instructionTextView.setText(currentSlide.instruction);
 
-        if (currentSlide.showInteractive) {
+        if (currentStep == 5) {
+            imageView.setVisibility(View.GONE);
+            interactiveView.setVisibility(View.VISIBLE);
+            progressBarLayout.setVisibility(View.GONE);
+            registrationErrorLayout.setVisibility(View.VISIBLE);
+            updateRegistrationError(errorValue);
+            errorValue = 0.25;
+        } else if (currentSlide.showInteractive) {
             imageView.setVisibility(View.GONE);
             interactiveView.setVisibility(View.VISIBLE);
             progressBarLayout.setVisibility(View.VISIBLE);
+            registrationErrorLayout.setVisibility(View.INVISIBLE);
             interactiveView.setOnClickListener(v -> handlePointTouch());
         } else {
             imageView.setVisibility(View.VISIBLE);
             interactiveView.setVisibility(View.GONE);
             progressBarLayout.setVisibility(View.INVISIBLE);
+            registrationErrorLayout.setVisibility(View.INVISIBLE);
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
             } else {
@@ -199,6 +217,19 @@ public class MainActivity extends AppCompatActivity {
         pointsTouched = 0;
         progressBar.setProgress(0);
         progressPercentage.setText(0 + "%");
+    }
+
+    private void updateRegistrationError(double errorValue) {
+        registrationErrorValue.setText(String.format("%.2f mm", errorValue));
+
+        if (errorValue > 2) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
+            setDialog(1);
+        } else if (errorValue < 1) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
+        } else {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_yellow);
+        }
     }
 
 }
