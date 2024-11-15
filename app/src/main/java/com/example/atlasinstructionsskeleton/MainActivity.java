@@ -161,6 +161,11 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     voidOpenMenu();
+
+                    currentSlideIndex =0;
+
+                    updateSlide();
+                    resetProgress();
                     dialog.dismiss();
 
                 }
