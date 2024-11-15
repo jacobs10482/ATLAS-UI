@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:layout_gravity="center"
+    android:padding="16dp"
+    android:background="@android:color/white"
+    android:elevation="4dp">
+
+    <!-- TextView for the message in the dialog -->
+    <TextView
+        android:id="@+id/dialog_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/black"
+        android:text="Unconnected mode is for familiarizing yourself with our interface. 3D visualizations of ATLAS will not work correctly in unconnected mode. Are you sure you don’t want to connect?"
+        android:textSize="40sp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <!-- First Button -->
+        <Button
+            android:id="@+id/dialog_button_1"
+            android:layout_width="125sp"
+            android:layout_height="75sp"
+            android:text="No"
+
+            android:background="@drawable/button_black_border"
+            android:textSize="35sp"
+            android:layout_marginTop="8dp"
+            android:layout_marginRight="40dp"/>
+
+
+        <!-- Second Button -->
+        <Button
+            android:id="@+id/dialog_button_2"
+            android:layout_width="125sp"
+            android:layout_height="75sp"
+            android:text="Yes"
+            android:textColor="@android:color/black"
+            android:textSize="35sp"
+            android:background="@drawable/button_red_border"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+</LinearLayout>

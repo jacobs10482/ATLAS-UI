@@ -66,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
         slides.add(new Slide("Calibration", "Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue", R.drawable.example_a, true));
         slides.add(new Slide("Fine Tune", "Trace the surface of the patient’s skin for about 15 seconds, ensuring to capture different features of the head.", R.drawable.example_a, true));
         slides.add(new Slide("Guide EVD", "Attach the EVD to the effector at 12cm and follow visual guidance to place the drain.", R.drawable.example_a, true));
-        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nIf draining, plug drain and proceed.  Otherwise, return to step 6.\n", R.drawable.draining_diagram, false));
-        slides.add(new Slide("Unmount", "Remove EVD from effector.\n\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.removal_diagram, false));
+        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nIf draining, plug drain and proceed.  Otherwise, return to step 6.\n", R.drawable.insertion_diagram, false));
+        slides.add(new Slide("Unmount", "Remove EVD from effector.\n\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.draining_diagram, false));
         slides.add(new Slide("Closure", "Attach trocar to end of EVD and tunnel about 6 cm posterior to the burr hole. Staple drain to fixate and connect drainage bag.", R.drawable.cleaning_diagram, false));
 
         leftButton.setOnClickListener(v -> {
