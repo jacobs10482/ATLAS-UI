@@ -34,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView progressPercentage;
 
+    private LinearLayout registrationErrorLayout;
+    private LinearLayout registrationErrorBox;
+    private TextView registrationErrorValue;
+
     private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
@@ -41,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private int pointsTouched = 0;
     private int totalPoints = 3;
     private double percentage = 100.0 / totalPoints;
+    private double errorValue = 2.1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +64,9 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         progressPercentage = findViewById(R.id.progressPercentage);
         exitButton = findViewById(R.id.ExitButton);
+        registrationErrorLayout = findViewById(R.id.registrationErrorLayout);
+        registrationErrorBox = findViewById(R.id.registrationErrorBox);
+        registrationErrorValue = findViewById(R.id.registrationErrorValue);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram, false));
@@ -145,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     dialog.dismiss();
+                    handleLeft();
                 }
             });
 
@@ -158,15 +167,24 @@ public class MainActivity extends AppCompatActivity {
         titleTextView.setText("Step " + currentStep + ": " + currentSlide.title);
         instructionTextView.setText(currentSlide.instruction);
 
-        if (currentSlide.showInteractive) {
+        if (currentStep == 5) {
+            imageView.setVisibility(View.GONE);
+            interactiveView.setVisibility(View.VISIBLE);
+            progressBarLayout.setVisibility(View.GONE);
+            registrationErrorLayout.setVisibility(View.VISIBLE);
+            updateRegistrationError(errorValue);
+            errorValue = 0.25;
+        } else if (currentSlide.showInteractive) {
             imageView.setVisibility(View.GONE);
             interactiveView.setVisibility(View.VISIBLE);
             progressBarLayout.setVisibility(View.VISIBLE);
+            registrationErrorLayout.setVisibility(View.INVISIBLE);
             interactiveView.setOnClickListener(v -> handlePointTouch());
         } else {
             imageView.setVisibility(View.VISIBLE);
             interactiveView.setVisibility(View.GONE);
             progressBarLayout.setVisibility(View.INVISIBLE);
+            registrationErrorLayout.setVisibility(View.INVISIBLE);
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
             } else {
@@ -199,6 +217,19 @@ public class MainActivity extends AppCompatActivity {
         pointsTouched = 0;
         progressBar.setProgress(0);
         progressPercentage.setText(0 + "%");
+    }
+
+    private void updateRegistrationError(double errorValue) {
+        registrationErrorValue.setText(String.format("%.2f mm", errorValue));
+
+        if (errorValue > 2) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
+            setDialog(1);
+        } else if (errorValue < 1) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
+        } else {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_yellow);
+        }
     }
 
 }
