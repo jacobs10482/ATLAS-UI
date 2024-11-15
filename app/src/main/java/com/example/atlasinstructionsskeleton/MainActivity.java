@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView progressPercentage;
 
+    private Button EVDButton;
     private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
