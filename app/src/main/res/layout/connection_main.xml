@@ -59,12 +59,25 @@
                     android:textColor="@color/white"
                     android:text="Bring your device to ATLAS' RFID scanner to connect" />
 
+                <EditText
+                    android:id="@+id/ipAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Enter the IP Address of Atlas here"
+                    android:padding="10dp"
+                    android:layout_marginTop="10dp"
+                    android:gravity = "center"
+                    android:background="@android:color/white"
+                    android:textSize="40sp"
+                    android:textColor="@android:color/black"
+                    android:inputType="text" />
+
                 <TextView
                     android:id="@+id/instructionTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:textSize="40sp"
+                    android:textSize="28sp"
                     android:text="Waiting for connection..."
                     android:padding="10dp"
                     android:background="@android:color/transparent"
@@ -75,17 +88,18 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:paddingHorizontal="10dp">
+                    android:paddingHorizontal="100dp">
+
 
                     <ImageView
                         android:id="@+id/imageView"
                         android:layout_width="match_parent"
                         android:layout_height="1000dp"
                         android:adjustViewBounds="true"
-                        android:padding="-200dp"
-                        android:src="@drawable/connection_mockup" />
-
-
+                        android:padding="-300dp"
+                        android:src="@drawable/connection_mockup"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/interactiveWrapper"
