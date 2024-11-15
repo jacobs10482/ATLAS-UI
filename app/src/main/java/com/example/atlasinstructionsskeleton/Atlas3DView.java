@@ -1,6 +1,5 @@
-package com.example.atlasinstructionsskeleton;
+package com.example.atlasinstructionsskeleton; // Replace with your actual package name
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
 import android.util.AttributeSet;
@@ -10,15 +9,14 @@ import android.view.ScaleGestureDetector;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.sceneform.Camera;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.SceneView;
-import com.google.ar.sceneform.math.Quaternion;
 import com.google.ar.sceneform.math.Vector3;
+import com.google.ar.sceneform.math.Quaternion;
 import com.google.ar.sceneform.rendering.Color;
 import com.google.ar.sceneform.rendering.Light;
 import com.google.ar.sceneform.rendering.ModelRenderable;
@@ -27,10 +25,21 @@ public class Atlas3DView extends FrameLayout {
 
     private SceneView sceneView;
     private GestureDetector gestureDetector;
+    private ScaleGestureDetector scaleGestureDetector;
     private Node modelNode;
     private float rotationX = 0f;
     private float rotationY = 0f;
-    private ScaleGestureDetector scaleGestureDetector;
+
+    // Listener interface for point touches
+    public interface OnPointTouchListener {
+        void onPointTouched();
+    }
+
+    private OnPointTouchListener pointTouchListener;
+
+    public void setOnPointTouchListener(OnPointTouchListener listener) {
+        this.pointTouchListener = listener;
+    }
 
     public Atlas3DView(Context context) {
         super(context);
@@ -47,10 +56,10 @@ public class Atlas3DView extends FrameLayout {
         init(context, attrs);
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private void init(Context context, AttributeSet attrs) {
         // Initialize SceneView
         sceneView = new SceneView(context);
+        sceneView.setBackgroundColor(android.graphics.Color.GREEN);
         // Add sceneView to this layout
         this.addView(sceneView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
@@ -65,14 +74,13 @@ public class Atlas3DView extends FrameLayout {
             return result1 || result2;
         });
 
-        // Load the default glTF model
-        Uri defaultModelUri = Uri.parse("file:///android_asset/phantom.glb"); // Use your glTF file name
-        loadModel(defaultModelUri);
+        // Load the glTF model from assets
+        loadModel(Uri.parse("file:///android_asset/phantom.glb")); // Ensure the file is correctly placed
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
-        public boolean onScroll(MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             if (modelNode != null) {
                 rotationX += distanceY / 10f;
                 rotationY += distanceX / 10f;
@@ -90,7 +98,7 @@ public class Atlas3DView extends FrameLayout {
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
-        public boolean onScale(@NonNull ScaleGestureDetector detector) {
+        public boolean onScale(ScaleGestureDetector detector) {
             if (modelNode != null) {
                 float scale = modelNode.getLocalScale().x * detector.getScaleFactor();
                 scale = Math.max(0.01f, Math.min(scale, 10.0f));
@@ -100,15 +108,24 @@ public class Atlas3DView extends FrameLayout {
         }
     }
 
+    private void loadModel(Uri modelUri) {
+        ModelRenderable.builder()
+                .setSource(getContext(), modelUri)
+                .build()
+                .thenAccept(this::addModelToScene)
+                .exceptionally(throwable -> {
+                    Toast.makeText(getContext(), "Unable to load model: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                    throwable.printStackTrace();
+                    return null;
+                });
+    }
+
     private void addModelToScene(ModelRenderable renderable) {
         modelNode = new Node();
         modelNode.setRenderable(renderable);
 
         // Position the model 1 meter in front of the camera
-        modelNode.setLocalPosition(new Vector3(0.0f, 0.0f, -1.0f));
-
-        // Adjust the scale of the model if it's too big or too small
-        modelNode.setLocalScale(new Vector3(0.1f, 0.1f, 0.1f)); // Scale down to 10%
+        modelNode.setLocalPosition(new Vector3(0.0f, 0.0f, -0.4f));
 
         // Add the node to the scene
         sceneView.getScene().addChild(modelNode);
@@ -146,19 +163,6 @@ public class Atlas3DView extends FrameLayout {
         sceneView.getScene().addChild(lightNode);
     }
 
-    public void loadModel(Uri modelUri) {
-        ModelRenderable.builder()
-                .setSource(getContext(), modelUri)
-                .setIsFilamentGltf(true)
-                .build()
-                .thenAccept(this::addModelToScene)
-                .exceptionally(throwable -> {
-                    Toast.makeText(getContext(), "Unable to load model: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
-                    throwable.printStackTrace();
-                    return null;
-                });
-    }
-
     // Lifecycle management
     public void onResume() throws CameraNotAvailableException {
         sceneView.resume();
@@ -169,23 +173,6 @@ public class Atlas3DView extends FrameLayout {
     }
 
     public void onDestroy() {
-        sceneView.destroy();
-    }
-
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        try {
-            sceneView.resume();
-        } catch (CameraNotAvailableException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        sceneView.pause();
         sceneView.destroy();
     }
 }
