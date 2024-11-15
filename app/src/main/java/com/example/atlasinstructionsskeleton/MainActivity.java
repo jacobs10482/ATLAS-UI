@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -18,9 +21,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.atlasinstructionsskeleton.Atlas3DView;
-import com.google.ar.core.exceptions.CameraNotAvailableException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView titleTextView;
     private TextView instructionTextView;
     private ImageView imageView;
-    private Atlas3DView atlas3DView; // Updated type
+    private WebView atlas3DView; // Changed type to WebView
     private TextView slideCounterTextView;
     private ImageButton leftButton;
     private ImageButton rightButton;
@@ -48,13 +48,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        EdgeToEdge.enable(this); // If using EdgeToEdge library; otherwise, remove
         setContentView(R.layout.activity_main);
 
         titleTextView = findViewById(R.id.titleTextView);
         instructionTextView = findViewById(R.id.instructionTextView);
         imageView = findViewById(R.id.imageView);
-        atlas3DView = findViewById(R.id.atlas3dView); // Initialize Atlas3DView
+        atlas3DView = findViewById(R.id.atlas3dView); // Initialize WebView
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
         leftButton = findViewById(R.id.leftButton);
         rightButton = findViewById(R.id.rightButton);
@@ -73,20 +73,14 @@ public class MainActivity extends AppCompatActivity {
         slides.add(new Slide("Unmount", "Remove EVD from effector.\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.removal_diagram));
         slides.add(new Slide("Closure", "Attach trocar to end of EVD and tunnel about 6 cm posterior to the burr hole. Staple drain to fixate and connect drainage bag.", R.drawable.cleaning_diagram));
 
-        leftButton.setOnClickListener(v -> {
-            handleLeft();
-        });
+        leftButton.setOnClickListener(v -> handleLeft());
 
-        rightButton.setOnClickListener(v -> {
-            handleRight();
-        });
+        rightButton.setOnClickListener(v -> handleRight());
 
-        exitButton.setOnClickListener(v -> {
-            setDialog(0);
-        });
+        exitButton.setOnClickListener(v -> setDialog(0));
 
-        // Set listener for Atlas3DView point touches
-        atlas3DView.setOnPointTouchListener(() -> handlePointTouch());
+        // Initialize WebView settings
+        initializeWebView();
 
         updateSlide();
 
@@ -95,6 +89,15 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private void initializeWebView() {
+        atlas3DView.setWebViewClient(new WebViewClient()); // Ensure links open within the WebView
+        WebSettings webSettings = atlas3DView.getSettings();
+        webSettings.setJavaScriptEnabled(true); // Enable JavaScript
+        webSettings.setAllowFileAccess(true); // Allow access to local files
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
     }
 
     private void handleLeft() {
@@ -146,12 +149,15 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView.setText(currentSlide.instruction);
 
         if (currentSlide instanceof AtlasSlide) {
-            // Show Atlas3DView and hide ImageView
+            // Show WebView and hide ImageView
             imageView.setVisibility(View.GONE);
             atlas3DView.setVisibility(View.VISIBLE);
             progressBarLayout.setVisibility(View.VISIBLE);
+
+            // Load the HTML file in WebView
+            atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
         } else {
-            // Show ImageView and hide Atlas3DView
+            // Show ImageView and hide WebView
             imageView.setVisibility(View.VISIBLE);
             atlas3DView.setVisibility(View.GONE);
             progressBarLayout.setVisibility(View.INVISIBLE);
@@ -166,17 +172,7 @@ public class MainActivity extends AppCompatActivity {
         slideCounterTextView.setText("Step " + currentStep + "/" + slides.size());
     }
 
-    private void handlePointTouch() {
-        pointsTouched++;
-        if (pointsTouched < totalPoints) {
-            updateProgress();
-        } else if (pointsTouched == totalPoints) {
-            updateProgress();
-            new Handler(Looper.getMainLooper()).postDelayed(this::handleRight, 500);
-        }
-    }
-
-    private void updateProgress() {
+    private void updateProgress(int percentage) {
         currentProgress += percentage;
         int progress = (int)Math.floor(currentProgress + 0.5);
         progressBar.setProgress(progress);
@@ -190,30 +186,21 @@ public class MainActivity extends AppCompatActivity {
         progressPercentage.setText("0%");
     }
 
-    // Lifecycle management
     @Override
     protected void onResume() {
         super.onResume();
-        if (atlas3DView.getVisibility() == View.VISIBLE) {
-            try {
-                atlas3DView.onResume();
-            } catch (CameraNotAvailableException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        // No need to manage WebView lifecycle here
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (atlas3DView.getVisibility() == View.VISIBLE) {
-            atlas3DView.onPause();
-        }
+        // No need to manage WebView lifecycle here
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        atlas3DView.onDestroy();
+        // No need to manage WebView lifecycle here
     }
 }
