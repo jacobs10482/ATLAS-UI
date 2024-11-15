@@ -39,6 +39,11 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView progressPercentage;
 
+    private LinearLayout registrationErrorLayout;
+    private LinearLayout registrationErrorBox;
+    private TextView registrationErrorValue;
+
+
     private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
@@ -107,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         progressPercentage = findViewById(R.id.progressPercentage);
         exitButton = findViewById(R.id.ExitButton);
+        registrationErrorLayout = findViewById(R.id.registrationErrorLayout);
+        registrationErrorBox = findViewById(R.id.registrationErrorBox);
+        registrationErrorValue = findViewById(R.id.registrationErrorValue);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram));
@@ -197,18 +205,28 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView.setText(currentSlide.instruction);
 
         if (currentSlide instanceof AtlasSlide) {
-            // Show WebView and hide ImageView
-            imageView.setVisibility(View.GONE);
-            atlas3DView.setVisibility(View.VISIBLE);
-            progressBarLayout.setVisibility(View.VISIBLE);
+            if (currentStep == 5) {
+                imageView.setVisibility(View.GONE);
+                atlas3DView.setVisibility(View.VISIBLE);
+                progressBarLayout.setVisibility(View.GONE);
+                registrationErrorLayout.setVisibility(View.VISIBLE);
+                updateRegistrationError(0);
+            } else {
+                // Show WebView and hide ImageView
+                imageView.setVisibility(View.GONE);
+                atlas3DView.setVisibility(View.VISIBLE);
+                progressBarLayout.setVisibility(View.VISIBLE);
+                registrationErrorLayout.setVisibility(View.INVISIBLE);
 
-            // Load the HTML file in WebView
-            atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
+                // Load the HTML file in WebView
+                atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
+            }
         } else {
             // Show ImageView and hide WebView
             imageView.setVisibility(View.VISIBLE);
             atlas3DView.setVisibility(View.GONE);
             progressBarLayout.setVisibility(View.INVISIBLE);
+            registrationErrorLayout.setVisibility(View.INVISIBLE);
 
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
@@ -232,6 +250,18 @@ public class MainActivity extends AppCompatActivity {
         pointsTouched = 0;
         progressBar.setProgress(0);
         progressPercentage.setText("0%");
+    }
+
+    private void updateRegistrationError(double errorValue) {
+        registrationErrorValue.setText(String.format("%.2f mm", errorValue));
+        if (errorValue > 2) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
+            setDialog(1);
+        } else if (errorValue < 1) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
+        } else {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_yellow);
+        }
     }
 
     @Override
