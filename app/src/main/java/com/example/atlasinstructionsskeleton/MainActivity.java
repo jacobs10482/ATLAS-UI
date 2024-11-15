@@ -31,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private WebView atlas3DView; // Changed type to WebView
     private TextView slideCounterTextView;
+
+    private Button EVDButton;
     private ImageButton leftButton;
     private ImageButton rightButton;
     private LinearLayout progressBarLayout;
@@ -49,6 +51,49 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this); // If using EdgeToEdge library; otherwise, remove
+        setContentView(R.layout.pick_procedure_main);
+
+
+        EVDButton = findViewById(R.id.EVDButton);
+
+        EVDButton.setOnClickListener(v -> {
+            EVDSlides();
+        });
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void initializeWebView() {
+        atlas3DView.setWebViewClient(new WebViewClient()); // Ensure links open within the WebView
+        WebSettings webSettings = atlas3DView.getSettings();
+        webSettings.setJavaScriptEnabled(true); // Enable JavaScript
+        webSettings.setAllowFileAccess(true); // Allow access to local files
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
+    }
+
+    private void handleLeft() {
+        if (currentSlideIndex > 0) {
+            currentSlideIndex--;
+            updateSlide();
+            resetProgress();
+        }
+    }
+
+
+    private void handleRight() {
+        if (currentSlideIndex < slides.size() - 1) {
+            currentSlideIndex++;
+            updateSlide();
+            resetProgress();
+        }
+    }
+
+    private void EVDSlides() {
         setContentView(R.layout.activity_main);
 
         titleTextView = findViewById(R.id.titleTextView);
@@ -83,37 +128,19 @@ public class MainActivity extends AppCompatActivity {
         initializeWebView();
 
         updateSlide();
+    }
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+    private void voidOpenMenu(){
+        setContentView(R.layout.pick_procedure_main);
+
+        EVDButton = findViewById(R.id.EVDButton);
+
+
+        EVDButton.setOnClickListener(v -> {
+            EVDSlides();
         });
-    }
 
-    private void initializeWebView() {
-        atlas3DView.setWebViewClient(new WebViewClient()); // Ensure links open within the WebView
-        WebSettings webSettings = atlas3DView.getSettings();
-        webSettings.setJavaScriptEnabled(true); // Enable JavaScript
-        webSettings.setAllowFileAccess(true); // Allow access to local files
-        webSettings.setAllowFileAccessFromFileURLs(true);
-        webSettings.setAllowUniversalAccessFromFileURLs(true);
-    }
-
-    private void handleLeft() {
-        if (currentSlideIndex > 0) {
-            currentSlideIndex--;
-            updateSlide();
-            resetProgress();
-        }
-    }
-
-    private void handleRight() {
-        if (currentSlideIndex < slides.size() - 1) {
-            currentSlideIndex++;
-            updateSlide();
-            resetProgress();
-        }
     }
 
     private void setDialog(int x){
@@ -124,8 +151,20 @@ public class MainActivity extends AppCompatActivity {
             Button button1 = dialog.findViewById(R.id.dialog_button_1);
             Button button2 = dialog.findViewById(R.id.dialog_button_2);
 
-            button1.setOnClickListener(v -> setDialog(1));
-            button2.setOnClickListener(v -> dialog.dismiss());
+            button1.setOnClickListener(new View.OnClickListener() {         //needs to return to procedure selection screen
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    voidOpenMenu();
+                    dialog.dismiss();
+
+                }
+            });
 
             dialog.show();
         } else if (x == 1){
@@ -134,13 +173,22 @@ public class MainActivity extends AppCompatActivity {
             Button button1 = dialog.findViewById(R.id.dialog_close_button);
             Button button2 = dialog.findViewById(R.id.dialog_redo_button);
 
-            button1.setOnClickListener(v -> dialog.dismiss());
-            button2.setOnClickListener(v -> dialog.dismiss());
+            button1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {         //needs to goto redo calibration
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
 
             dialog.show();
         }
     }
-
     private void updateSlide() {
         Slide currentSlide = slides.get(currentSlideIndex);
         int currentStep = currentSlideIndex + 1;
