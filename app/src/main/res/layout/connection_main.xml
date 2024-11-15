@@ -85,6 +85,8 @@
                         android:padding="-200dp"
                         android:src="@drawable/connection_mockup" />
 
+
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/interactiveWrapper"
                         android:layout_width="match_parent"
@@ -98,6 +100,7 @@
                             android:visibility="gone"
                             app:layout_constraintDimensionRatio="1:1"
                             app:layout_constraintTop_toTopOf="parent" />
+
                     </androidx.constraintlayout.widget.ConstraintLayout>
                 </LinearLayout>
             </LinearLayout>
