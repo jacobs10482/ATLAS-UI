@@ -29,9 +29,9 @@
         android:id="@+id/dialog_button_1"
         android:layout_width="125sp"
         android:layout_height="75sp"
-        android:text="Yes"
+        android:text="No"
 
-        android:background="@drawable/button_red_border"
+        android:background="@drawable/button_black_border"
         android:textSize="35sp"
         android:textColor="@android:color/black"
         android:layout_marginTop="8dp"
@@ -43,9 +43,9 @@
         android:id="@+id/dialog_button_2"
         android:layout_width="125sp"
         android:layout_height="75sp"
-        android:text="No"
+        android:text="Yes"
         android:textSize="35sp"
-        android:background="@drawable/button_black_border"
+        android:background="@drawable/button_red_border"
         android:layout_marginTop="8dp" />
     </LinearLayout>
 </LinearLayout>
