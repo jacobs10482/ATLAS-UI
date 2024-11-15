@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Model Viewer</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #model-container { width: 100%; height: 100vh; }
+    </style>
+</head>
+<body>
+<div id="model-container"></div>
+
+<!-- Three.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- GLTFLoader -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- OrbitControls -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    let scene, camera, renderer, controls;
+
+    // Add Floor to XY Plane
+    function addFloor() {
+        const floorGeometry = new THREE.PlaneGeometry(20, 20); // Width and height of the floor
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            color: 0xcccccc, // Light gray color for the floor
+            side: THREE.DoubleSide, // Render both sides of the plane
+        });
+
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotateX(Math.PI / 2); // Rotate to align with the XY plane
+        floor.position.z = 0; // Place it at Z=0 (aligned with the XY plane)
+
+        // Add the floor to the scene
+        scene.add(floor);
+        console.log('Floor added to the scene.');
+    }
+
+    function init() {
+        const container = document.getElementById('model-container');
+
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); // White background
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 1, 6);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        // Lights
+        const pointLight = new THREE.PointLight(0xffffff, 4, 100);
+        pointLight.position.set(20, 20, 20);
+        scene.add(pointLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+        hemiLight.position.set(0, 20, 0);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(-3, 10, -10);
+        scene.add(dirLight);
+
+        // Initialize OrbitControls
+        try {
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // Smooth controls
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true; // Allow zoom
+            controls.enablePan = true; // Enable panning (translation)
+            controls.rotateSpeed = 0.5; // Adjust rotation speed
+            controls.minDistance = 1;
+            controls.maxDistance = 20;
+            controls.maxPolarAngle = Math.PI / 2;
+            console.log('OrbitControls initialized successfully.');
+        } catch (error) {
+            console.error('Failed to initialize OrbitControls:', error);
+        }
+
+        // Add the floor
+        addFloor();
+
+        // Load Models
+        const loader = new THREE.GLTFLoader();
+        const modelPaths = ['phantom.glb', 'link0.glb', 'link1.glb', 'link2.glb', 'link3.glb', 'link4.glb'];
+        const positions = [
+            [0, 0, 0],   // phantom
+            [-2, 0, 0],  // link0
+            [-2, 0, 0],  // link1
+            [-2, 0, 0],   // link2
+            [-2, 0, 0],   // link3
+            [-2, 0, 0]    // link4
+        ];
+
+        modelPaths.forEach((path, index) => {
+            loader.load(
+                path,
+                function (gltf) {
+                    const model = gltf.scene;
+
+                    // Scale and Color Models
+                    if (path === 'phantom.glb') {
+                        model.scale.set(10, 10, 10); // Scale phantom by 10
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material.color.set(0xffffff); // White color
+                                child.material.transparent = true; // Enable transparency
+                                child.material.opacity = 0.5; // Set opacity to 50%
+                            }
+                        });
+                    } else {
+                        model.scale.set(0.01, 0.01, 0.01); // Scale links by 0.01
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material.color.set(0x0000ff); // Blue color
+                            }
+                        });
+                    }
+
+                    // Position Models
+                    const [x, y, z] = positions[index];
+                    model.position.set(x, y, z);
+
+                    // Rotate all models 90 degrees along the X-axis
+                    model.rotateX(Math.PI / 2);
+
+                    // Add the model to the scene
+                    scene.add(model);
+                    console.log(`${path} loaded successfully.`);
+                },
+                undefined,
+                function (error) {
+                    console.error(`An error occurred while loading ${path}:`, error);
+                }
+            );
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        // Start animation
+        animate();
+    }
+
+    function onWindowResize() {
+        const container = document.getElementById('model-container');
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (controls) {
+            controls.update(); // Required if controls.enableDamping = true
+        } else {
+            console.warn('OrbitControls is undefined.');
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+</script>
+
+</body>
+</html>
