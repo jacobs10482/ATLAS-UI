@@ -164,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
                     voidOpenMenu();
 
                     currentSlideIndex =0;
-
                     updateSlide();
                     resetProgress();
                     dialog.dismiss();
