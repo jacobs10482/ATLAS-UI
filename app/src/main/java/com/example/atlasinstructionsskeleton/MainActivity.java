@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 imageView.setVisibility(View.GONE);
                 atlas3DView.setVisibility(View.VISIBLE);
                 progressBarLayout.setVisibility(View.VISIBLE);
-                registrationErrorLayout.setVisibility(View.INVISIBLE);
+                registrationErrorLayout.setVisibility(View.GONE);
 
                 // Load the HTML file in WebView
                 atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
@@ -226,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
             imageView.setVisibility(View.VISIBLE);
             atlas3DView.setVisibility(View.GONE);
             progressBarLayout.setVisibility(View.INVISIBLE);
-            registrationErrorLayout.setVisibility(View.INVISIBLE);
+            registrationErrorLayout.setVisibility(View.GONE);
 
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
