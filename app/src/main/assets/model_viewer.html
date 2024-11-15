@@ -21,6 +21,52 @@
 <script>
     let scene, camera, renderer, controls;
 
+    // Global variables to be updated by WebSocket messages
+    let globalVariable1 = 'Initial Value';
+    let globalVariable2 = 0;
+
+    // WebSocket function
+    function initializeWebSocket() {
+        const ws = new WebSocket("ws://172.20.10.9:8765"); // Update to your server address
+
+        ws.onopen = () => {
+            console.log("WebSocket connection established.");
+        };
+
+        ws.onmessage = (event) => {
+            console.log(`WebSocket message received: ${event.data}`);
+
+            // Update global variables based on incoming data
+            try {
+                const data = JSON.parse(event.data); // Assuming the server sends JSON messages
+                if (data.variable1) globalVariable1 = data.variable1;
+                if (data.variable2 !== undefined) globalVariable2 = data.variable2;
+
+                console.log(`Updated globalVariable1: ${globalVariable1}`);
+                console.log(`Updated globalVariable2: ${globalVariable2}`);
+
+                // Optionally, trigger updates in your 3D scene based on the new data
+                updateScene(globalVariable1, globalVariable2);
+            } catch (error) {
+                console.error(`Error parsing WebSocket message: ${error.message}`);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log("WebSocket connection closed.");
+        };
+
+        ws.onerror = (error) => {
+            console.error(`WebSocket error: ${error.message}`);
+        };
+    }
+
+    // Example function to update the 3D scene with the new global variables
+    function updateScene(variable1, variable2) {
+        console.log(`Updating scene with: ${variable1}, ${variable2}`);
+        // You can add logic here to modify the scene based on the variables
+    }
+
     // Add Floor to XY Plane
     function addFloor() {
         const floorGeometry = new THREE.PlaneGeometry(20, 20); // Width and height of the floor
@@ -143,6 +189,9 @@
 
         // Handle window resize
         window.addEventListener('resize', onWindowResize, false);
+
+        // Start WebSocket connection
+        initializeWebSocket();
 
         // Start animation
         animate();
