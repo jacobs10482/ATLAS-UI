@@ -1,7 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.ATLASInstructionsSkeleton" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+    <!-- Base application theme set to light mode. -->
+    <style name="Base.Theme.ATLASInstructionsSkeleton" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your light theme here -->
+        <item name="colorPrimary">@color/white</item>
+        <!-- Other color customizations for light mode -->
     </style>
 </resources>

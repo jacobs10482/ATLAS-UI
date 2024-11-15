@@ -7,139 +7,217 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="20dp"
-        android:layout_marginVertical="10dp">
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:textSize="30dp"
-            android:text="Exit Operation">
-        </Button>
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:textSize="30dp"
-            android:text="Reconnect Device">
-        </Button>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingHorizontal="90dp">
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:src="@drawable/example"
-                android:padding="5dp"
-                android:background="@color/black"
-                />
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/interactiveWrapper"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <View
-                    android:id="@+id/interactiveView"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    app:layout_constraintDimensionRatio="1:1"
-                    app:layout_constraintTop_toTopOf="parent"
-                    android:background="@color/black"
-                    android:visibility="gone"/>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-            <TextView
-                android:id="@+id/progressBarView"
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:gravity="center"
-                android:background="@color/black"
-                android:text="Insert Progress Bar"
-                android:textSize="40dp"
-                android:textColor="@color/white"
-                android:layout_marginTop="20dp"
-                android:visibility="invisible">
-            </TextView>
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="30dp"
-            android:paddingRight="30dp">
-
-            <TextView
-                android:id="@+id/titleTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textSize="40dp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:text="Step 4: Calibration">
-            </TextView>
-            <TextView
-                android:id="@+id/instructionTextView"
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="20dp"
+            android:layout_marginVertical="10dp">
+            <Button
+                android:id="@+id/ExitButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textSize="30dp"
+                android:text="Exit Operation">
+            </Button>
+            <View
+                android:layout_width="0dp"
                 android:layout_height="0dp"
+                android:layout_weight="1" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textSize="30dp"
+                android:text="Reconnect Device">
+            </Button>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:layout_weight="1">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textSize="40dp"
-                android:text="Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue.">
-            </TextView>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center">
-                <Button
-                    android:id="@+id/leftButton"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp">
-                </Button>
-                <TextView
-                    android:id="@+id/slideCounterTextView"
-                    android:layout_width="0dp"
+                android:orientation="vertical"
+                android:paddingHorizontal="90dp">
+                <ImageView
+                    android:id="@+id/imageView"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/example_a"
+                    android:padding="5dp"
+                    android:background="@color/white"
+                    />
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/interactiveWrapper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <com.example.atlasinstructionsskeleton.Atlas3DView
+                        android:id="@+id/atlas3dView"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:background="@color/white"
+                        android:visibility="gone" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <LinearLayout
+                    android:id="@+id/progressBarlayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:gravity="center"
+                        android:textSize="24sp"
+                        android:text="Points Touched"
+                        />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <ProgressBar
+                            android:id="@+id/progressBar"
+                            style="@android:style/Widget.ProgressBar.Horizontal"
+                            android:layout_width="300dp"
+                            android:layout_height="50dp"
+                            android:progress="0"
+                            android:progressTint="#39E75F"
+                            />
+                        <TextView
+                            android:id="@+id/progressPercentage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="50dp"
+                            android:layout_marginLeft="10dp"
+                            android:gravity="center"
+                            android:layout_toRightOf="@id/progressBar"
+                            android:textSize="24sp"
+                            android:text="0%"
+                            />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/registrationErrorLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Surface Registration Error:"
+                        android:textSize="24sp"
+                        android:layout_gravity="center"
+                        />
+                    <LinearLayout
+                        android:id="@+id/registrationErrorBox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/registration_frame_green"
+                        android:paddingVertical="10dp"
+                        android:paddingHorizontal="50dp"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/registrationErrorValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.25 mm"
+                            android:textSize="28sp"
+                            android:textColor="@color/black"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="top"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="30dp"
+                android:paddingRight="30dp">
+
+                <TextView
+                    android:id="@+id/titleTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:gravity="center"
                     android:textSize="40dp"
                     android:textStyle="bold"
                     android:textColor="@color/black"
-                    android:text="Step 4/9">
+                    android:text="Step 4: Calibration">
                 </TextView>
-                <Button
-                    android:id="@+id/rightButton"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp">
-                </Button>
+                <TextView
+                    android:id="@+id/instructionTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textSize="40dp"
+                    android:text="Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue.">
+                </TextView>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center">
+                    <ImageButton
+                        android:id="@+id/leftButton"
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:contentDescription="Go to previous page"
+                        android:src="@drawable/left_arrow"
+                        android:clickable="true"
+                        android:scaleType="centerInside"
+                        android:padding="20dp"
+                        />
+                    <TextView
+                        android:id="@+id/slideCounterTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:textSize="40dp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:text="Step 4/9">
+                    </TextView>
+                    <ImageButton
+                        android:id="@+id/rightButton"
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:contentDescription="Go to next page"
+                        android:src="@drawable/right_arrow"
+                        android:clickable="true"
+                        android:scaleType="centerInside"
+                        android:padding="20dp"
+                        />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
 
-</LinearLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
