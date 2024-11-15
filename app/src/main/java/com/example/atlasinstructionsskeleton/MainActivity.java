@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -18,9 +21,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.atlasinstructionsskeleton.Atlas3DView;
-import com.google.ar.core.exceptions.CameraNotAvailableException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,13 +29,21 @@ public class MainActivity extends AppCompatActivity {
     private TextView titleTextView;
     private TextView instructionTextView;
     private ImageView imageView;
-    private Atlas3DView atlas3DView; // Updated type
+    private WebView atlas3DView; // Changed type to WebView
+
     private TextView slideCounterTextView;
+
+    private Button EVDButton;
     private ImageButton leftButton;
     private ImageButton rightButton;
     private LinearLayout progressBarLayout;
     private ProgressBar progressBar;
     private TextView progressPercentage;
+
+    private LinearLayout registrationErrorLayout;
+    private LinearLayout registrationErrorBox;
+    private TextView registrationErrorValue;
+
 
     private Button exitButton;
     private List<Slide> slides;
@@ -48,13 +56,58 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        EdgeToEdge.enable(this); // If using EdgeToEdge library; otherwise, remove
+        setContentView(R.layout.pick_procedure_main);
+
+
+        EVDButton = findViewById(R.id.EVDButton);
+
+        EVDButton.setOnClickListener(v -> {
+            EVDSlides();
+        });
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void initializeWebView() {
+        atlas3DView.setWebViewClient(new WebViewClient()); // Ensure links open within the WebView
+        WebSettings webSettings = atlas3DView.getSettings();
+        webSettings.setJavaScriptEnabled(true); // Enable JavaScript
+        webSettings.setAllowFileAccess(true); // Allow access to local files
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
+    }
+
+    private void handleLeft() {
+        if (currentSlideIndex > 0) {
+            currentSlideIndex--;
+            updateSlide();
+            resetProgress();
+        }
+    }
+
+
+    private void handleRight() {
+        if (currentSlideIndex < slides.size() - 1) {
+            currentSlideIndex++;
+            updateSlide();
+            resetProgress();
+        }
+    }
+
+    private void EVDSlides() {
         setContentView(R.layout.activity_main);
 
         titleTextView = findViewById(R.id.titleTextView);
         instructionTextView = findViewById(R.id.instructionTextView);
         imageView = findViewById(R.id.imageView);
-        atlas3DView = findViewById(R.id.atlas3dView); // Initialize Atlas3DView
+        atlas3DView = findViewById(R.id.atlas3dView); // Initialize WebView
+        // Load the HTML file in WebView
+        atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
         leftButton = findViewById(R.id.leftButton);
         rightButton = findViewById(R.id.rightButton);
@@ -62,6 +115,9 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         progressPercentage = findViewById(R.id.progressPercentage);
         exitButton = findViewById(R.id.ExitButton);
+        registrationErrorLayout = findViewById(R.id.registrationErrorLayout);
+        registrationErrorBox = findViewById(R.id.registrationErrorBox);
+        registrationErrorValue = findViewById(R.id.registrationErrorValue);
 
         slides = new ArrayList<>();
         slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram));
@@ -73,44 +129,29 @@ public class MainActivity extends AppCompatActivity {
         slides.add(new Slide("Unmount", "Remove EVD from effector.\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.removal_diagram));
         slides.add(new Slide("Closure", "Attach trocar to end of EVD and tunnel about 6 cm posterior to the burr hole. Staple drain to fixate and connect drainage bag.", R.drawable.cleaning_diagram));
 
-        leftButton.setOnClickListener(v -> {
-            handleLeft();
-        });
+        leftButton.setOnClickListener(v -> handleLeft());
 
-        rightButton.setOnClickListener(v -> {
-            handleRight();
-        });
+        rightButton.setOnClickListener(v -> handleRight());
 
-        exitButton.setOnClickListener(v -> {
-            setDialog(0);
-        });
+        exitButton.setOnClickListener(v -> setDialog(0));
 
-        // Set listener for Atlas3DView point touches
-        atlas3DView.setOnPointTouchListener(() -> handlePointTouch());
+        // Initialize WebView settings
+        initializeWebView();
 
         updateSlide();
+    }
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+    private void voidOpenMenu(){
+        setContentView(R.layout.pick_procedure_main);
+
+        EVDButton = findViewById(R.id.EVDButton);
+
+
+        EVDButton.setOnClickListener(v -> {
+            EVDSlides();
         });
-    }
 
-    private void handleLeft() {
-        if (currentSlideIndex > 0) {
-            currentSlideIndex--;
-            updateSlide();
-            resetProgress();
-        }
-    }
-
-    private void handleRight() {
-        if (currentSlideIndex < slides.size() - 1) {
-            currentSlideIndex++;
-            updateSlide();
-            resetProgress();
-        }
     }
 
     private void setDialog(int x){
@@ -121,8 +162,24 @@ public class MainActivity extends AppCompatActivity {
             Button button1 = dialog.findViewById(R.id.dialog_button_1);
             Button button2 = dialog.findViewById(R.id.dialog_button_2);
 
-            button1.setOnClickListener(v -> setDialog(1));
-            button2.setOnClickListener(v -> dialog.dismiss());
+            button1.setOnClickListener(new View.OnClickListener() {         //needs to return to procedure selection screen
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    voidOpenMenu();
+
+                    currentSlideIndex = 0;
+                    updateSlide();
+                    resetProgress();
+                    dialog.dismiss();
+
+                }
+            });
 
             dialog.show();
         } else if (x == 1){
@@ -131,13 +188,22 @@ public class MainActivity extends AppCompatActivity {
             Button button1 = dialog.findViewById(R.id.dialog_close_button);
             Button button2 = dialog.findViewById(R.id.dialog_redo_button);
 
-            button1.setOnClickListener(v -> dialog.dismiss());
-            button2.setOnClickListener(v -> dialog.dismiss());
+            button1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() {         //needs to goto redo calibration
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
 
             dialog.show();
         }
     }
-
     private void updateSlide() {
         Slide currentSlide = slides.get(currentSlideIndex);
         int currentStep = currentSlideIndex + 1;
@@ -146,15 +212,27 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView.setText(currentSlide.instruction);
 
         if (currentSlide instanceof AtlasSlide) {
-            // Show Atlas3DView and hide ImageView
-            imageView.setVisibility(View.GONE);
-            atlas3DView.setVisibility(View.VISIBLE);
-            progressBarLayout.setVisibility(View.VISIBLE);
+            if (currentStep == 5) {
+                imageView.setVisibility(View.GONE);
+                atlas3DView.setVisibility(View.VISIBLE);
+                progressBarLayout.setVisibility(View.GONE);
+                registrationErrorLayout.setVisibility(View.VISIBLE);
+                updateRegistrationError(0);
+            } else {
+                // Show WebView and hide ImageView
+                imageView.setVisibility(View.GONE);
+                atlas3DView.setVisibility(View.VISIBLE);
+                progressBarLayout.setVisibility(View.VISIBLE);
+                registrationErrorLayout.setVisibility(View.INVISIBLE);
+
+
+            }
         } else {
-            // Show ImageView and hide Atlas3DView
+            // Show ImageView and hide WebView
             imageView.setVisibility(View.VISIBLE);
             atlas3DView.setVisibility(View.GONE);
             progressBarLayout.setVisibility(View.INVISIBLE);
+            registrationErrorLayout.setVisibility(View.INVISIBLE);
 
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
@@ -166,17 +244,7 @@ public class MainActivity extends AppCompatActivity {
         slideCounterTextView.setText("Step " + currentStep + "/" + slides.size());
     }
 
-    private void handlePointTouch() {
-        pointsTouched++;
-        if (pointsTouched < totalPoints) {
-            updateProgress();
-        } else if (pointsTouched == totalPoints) {
-            updateProgress();
-            new Handler(Looper.getMainLooper()).postDelayed(this::handleRight, 500);
-        }
-    }
-
-    private void updateProgress() {
+    private void updateProgress(int percentage) {
         currentProgress += percentage;
         int progress = (int)Math.floor(currentProgress + 0.5);
         progressBar.setProgress(progress);
@@ -190,30 +258,33 @@ public class MainActivity extends AppCompatActivity {
         progressPercentage.setText("0%");
     }
 
-    // Lifecycle management
+    private void updateRegistrationError(double errorValue) {
+        registrationErrorValue.setText(String.format("%.2f mm", errorValue));
+        if (errorValue > 2) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
+            setDialog(1);
+        } else if (errorValue < 1) {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
+        } else {
+            registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_yellow);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        if (atlas3DView.getVisibility() == View.VISIBLE) {
-            try {
-                atlas3DView.onResume();
-            } catch (CameraNotAvailableException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        // No need to manage WebView lifecycle here
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (atlas3DView.getVisibility() == View.VISIBLE) {
-            atlas3DView.onPause();
-        }
+        // No need to manage WebView lifecycle here
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        atlas3DView.onDestroy();
+        // No need to manage WebView lifecycle here
     }
 }
