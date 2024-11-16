@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView instructionTextView;
     private ImageView imageView;
     private WebView atlas3DView; // Changed type to WebView
+
     private TextView slideCounterTextView;
 
     private Button EVDButton;
@@ -105,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView = findViewById(R.id.instructionTextView);
         imageView = findViewById(R.id.imageView);
         atlas3DView = findViewById(R.id.atlas3dView); // Initialize WebView
+        // Load the HTML file in WebView
+        atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
         leftButton = findViewById(R.id.leftButton);
         rightButton = findViewById(R.id.rightButton);
@@ -169,6 +172,10 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     voidOpenMenu();
+
+                    currentSlideIndex = 0;
+                    updateSlide();
+                    resetProgress();
                     dialog.dismiss();
 
                 }
@@ -218,8 +225,7 @@ public class MainActivity extends AppCompatActivity {
                 progressBarLayout.setVisibility(View.VISIBLE);
                 registrationErrorLayout.setVisibility(View.GONE);
 
-                // Load the HTML file in WebView
-                atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
+
             }
         } else {
             // Show ImageView and hide WebView
