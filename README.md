@@ -1,5 +1,5 @@
 # AD1_2
-## ALTLAS
+## ATLAS
 ATLAS is a fully functional passive surgical guidance system designed to make life-saving procedures easier and more reliable. Our team aim to build a user-friendly UI for ATLAS to display step-by-step instructions and 3D visualizations for better surgical guidance.
 
 ## Key Features
