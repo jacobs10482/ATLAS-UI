@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log; // Added for logging
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -21,25 +22,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import android.os.Handler;
-
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+
+// Import ZeroMQ classes
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity"; // Tag for logging
 
     private TextView titleTextView;
     private TextView instructionTextView;
     private ImageView imageView;
-    private WebView atlas3DView; // Changed type to WebView
+    private WebView atlas3DView;
 
     private TextView slideCounterTextView;
 
     private Button EVDButton;
-
-    private Button TestButton;
     private ImageButton leftButton;
     private ImageButton rightButton;
     private LinearLayout progressBarLayout;
@@ -50,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout registrationErrorBox;
     private TextView registrationErrorValue;
 
-
     private Button exitButton;
     private List<Slide> slides;
     private int currentSlideIndex = 0;
@@ -59,23 +59,23 @@ public class MainActivity extends AppCompatActivity {
     private int totalPoints = 3;
     private double percentage = 100.0 / totalPoints;
 
+    // ZeroMQ context and sockets
+    private ZContext zmqContext;
+    private ZMQ.Socket zmqPushSocket;
+    private ZMQ.Socket zmqSubSocket;
+    private Thread zmqThread;
+    private boolean isZmqRunning = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this); // If using EdgeToEdge library; otherwise, remove
         setContentView(R.layout.pick_procedure_main);
 
-        TestButton = findViewById(R.id.dialog2);
-
         EVDButton = findViewById(R.id.EVDButton);
-
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
-        });
-
-        TestButton.setOnClickListener(v -> {
-            setDialog(1);
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -83,6 +83,56 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Initialize ZeroMQ
+        initializeZeroMQ();
+    }
+
+    private void initializeZeroMQ() {
+        // Create ZeroMQ context
+        zmqContext = new ZContext();
+
+        // Server IP and ports
+        String serverIp = "10.0.0.128"; // Replace with your server IP address
+        int syncPort = 5557; // Port for synchronization (server's PULL socket)
+        int pubPort = 5556;  // Port for receiving data (server's PUB socket)
+
+        // 1. Create a PUSH socket to send a synchronization message to the server
+        zmqPushSocket = zmqContext.createSocket(ZMQ.PUSH);
+        String syncAddress = "tcp://" + serverIp + ":" + syncPort;
+        zmqPushSocket.connect(syncAddress);
+
+        // Send a synchronization message
+        zmqPushSocket.send("sync");
+
+        // Close the PUSH socket as it's no longer needed
+        zmqPushSocket.close();
+
+        // 2. Create a SUB socket to receive data from the server
+        zmqSubSocket = zmqContext.createSocket(ZMQ.SUB);
+        String pubAddress = "tcp://" + serverIp + ":" + pubPort;
+        zmqSubSocket.connect(pubAddress);
+
+        // Subscribe to all messages (you can specify a topic if needed)
+        zmqSubSocket.subscribe("".getBytes());
+
+        // Start a background thread to receive messages
+        isZmqRunning = true;
+        zmqThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (isZmqRunning && !Thread.currentThread().isInterrupted()) {
+                    // Receive message
+                    String receivedData = zmqSubSocket.recvStr();
+
+                    if (receivedData != null) {
+                        // Log the received data
+                        Log.d(TAG, "Received data from ZMQ: " + receivedData);
+                    }
+                }
+            }
+        });
+        zmqThread.start();
     }
 
     private void initializeWebView() {
@@ -102,7 +152,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void handleRight() {
         if (currentSlideIndex < slides.size() - 1) {
             currentSlideIndex++;
@@ -118,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView = findViewById(R.id.instructionTextView);
         imageView = findViewById(R.id.imageView);
         atlas3DView = findViewById(R.id.atlas3dView); // Initialize WebView
+
         // Load the HTML file in WebView
         atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
@@ -153,32 +203,25 @@ public class MainActivity extends AppCompatActivity {
         updateSlide();
     }
 
-
-    private void voidOpenMenu(){
+    private void voidOpenMenu() {
         setContentView(R.layout.pick_procedure_main);
 
         EVDButton = findViewById(R.id.EVDButton);
-        TestButton = findViewById(R.id.dialog2);
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
         });
-
-        TestButton.setOnClickListener(v -> {
-            setDialog(1);
-        });
-
     }
 
-    private void setDialog(int x){
+    private void setDialog(int x) {
         Dialog dialog = new Dialog(this);
-        if (x == 0){
+        if (x == 0) {
             dialog.setContentView(R.layout.error1);
 
             Button button1 = dialog.findViewById(R.id.dialog_button_1);
             Button button2 = dialog.findViewById(R.id.dialog_button_2);
 
-            button1.setOnClickListener(new View.OnClickListener() {         //needs to return to procedure selection screen
+            button1.setOnClickListener(new View.OnClickListener() { // Return to procedure selection screen
                 @Override
                 public void onClick(View v) {
                     dialog.dismiss();
@@ -193,12 +236,11 @@ public class MainActivity extends AppCompatActivity {
                     updateSlide();
                     resetProgress();
                     dialog.dismiss();
-
                 }
             });
 
             dialog.show();
-        } else if (x == 1){
+        } else if (x == 1) {
             dialog.setContentView(R.layout.error2);
 
             Button button1 = dialog.findViewById(R.id.dialog_close_button);
@@ -210,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                 }
             });
-            button2.setOnClickListener(new View.OnClickListener() {         //needs to goto redo calibration
+            button2.setOnClickListener(new View.OnClickListener() { // Go to redo calibration
                 @Override
                 public void onClick(View v) {
                     dialog.dismiss();
@@ -218,33 +260,9 @@ public class MainActivity extends AppCompatActivity {
             });
 
             dialog.show();
-
-
-            final int countdownTime = 10;
-            final AtomicInteger remainingTime = new AtomicInteger(countdownTime);
-
-            // Update the button text every second
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    // Update button text
-                    button2.setText(String.format("Redo (%d seconds)", remainingTime.get()));
-
-                    // Decrease remaining time
-                    if (remainingTime.get() > 0) {
-                        remainingTime.decrementAndGet();
-                        // Repeat the countdown every second
-                        new Handler(Looper.getMainLooper()).postDelayed(this, 1000);
-                    } else {
-                        // Once countdown reaches 0, dismiss the dialog
-                        if (dialog.isShowing()) {
-                            dialog.dismiss();
-                        }
-                    }
-                }
-            }, 1000);
         }
     }
+
     private void updateSlide() {
         Slide currentSlide = slides.get(currentSlideIndex);
         int currentStep = currentSlideIndex + 1;
@@ -265,8 +283,6 @@ public class MainActivity extends AppCompatActivity {
                 atlas3DView.setVisibility(View.VISIBLE);
                 progressBarLayout.setVisibility(View.VISIBLE);
                 registrationErrorLayout.setVisibility(View.INVISIBLE);
-
-
             }
         } else {
             // Show ImageView and hide WebView
@@ -287,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateProgress(int percentage) {
         currentProgress += percentage;
-        int progress = (int)Math.floor(currentProgress + 0.5);
+        int progress = (int) Math.floor(currentProgress + 0.5);
         progressBar.setProgress(progress);
         progressPercentage.setText(progress + "%");
     }
@@ -312,20 +328,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        // No need to manage WebView lifecycle here
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // No need to manage WebView lifecycle here
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
-        // No need to manage WebView lifecycle here
+        // Clean up ZeroMQ resources
+        isZmqRunning = false;
+        if (zmqThread != null) {
+            zmqThread.interrupt();
+        }
+        if (zmqSubSocket != null) {
+            zmqSubSocket.close();
+        }
+        if (zmqContext != null) {
+            zmqContext.close();
+        }
     }
 }
