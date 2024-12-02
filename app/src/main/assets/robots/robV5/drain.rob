@@ -1,0 +1,41 @@
+links	"base0" "base1" "base2" "base3" "base4" "base_link" "drain" "stylet"
+
+parents	-1 0 1 2 3 4 5 5
+
+axis	1 0 0	0 1 0	0 0 1	0 0 1	0 1 0	1 0 0	-1 0 -0 -1 0 -0
+
+jointtype	p p p r r r p p
+
+Tparent	1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 -0.8660 -0.5	0 0.5 -0.8660	0 0 0 \
+1 0 0	0 -0.5 0.8660	0 -0.8660 -0.5	0 0 0
+
+q	0 0 0 0 0 0 0 0
+
+qmin	-inf -inf -inf -inf -inf -inf -inf -inf
+
+qmax	inf inf inf inf inf inf inf inf
+
+geometry	"" "" "" "" "" "" "V5/drain.stl" "V5/stylet.stl"
+
+mass	0 0 0 0 0 0 0 0
+
+com	0 0 0	0 0 0	0 0 0	0 0 0	0 0 0	0 0 0	0 0 0	0 0 0
+
+inertia	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	
+
+torquemax	0 0 0 0 0 0 inf inf
+
+velmax	inf inf inf inf inf inf inf inf
+
+accmax	inf inf inf inf inf inf inf inf
+
+
+joint floating 5 -1
+joint weld 6
+joint weld 7

@@ -1,0 +1,68 @@
+links	"base0" "base1" "base2" "base3" "base4" "base_link" "link_0_1" "link_1_1" "link_2_1" "link_3_1" "eelink" "drainlink" "regjoint" 
+
+parents	-1 0 1 2 3 4 5 6 7 8 9 10 10
+
+axis	1 0 0	0 1 0	0 0 1	0 0 1	0 1 0	1 0 0	-0 0 1	-1 0 -0	-1 0 -0	-1 0 -0	-1 0 -0 -1 0 -0 -1 0 -0
+
+jointtype	p p p r r r r r r r r r r
+
+Tparent	1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0 0 0 \
+1 0 0	0 1 0	0 0 1	0.003069 -0.004931 0.005243 \
+1 0 0	0 1 0	0 0 1	0.002 0.04 0.0265 \
+1 0 0	0 1 0	0 0 1	0 0.15 0 \
+1 0 0	0 1 0	0 0 1	0 0.1 0 \
+1 0 0   0 1 0   0 0 1	-0.00175 0.079937 0.021542 \
+1 0 0	0 1 0	0 0 1	0 0.0605 0.104789 \
+1 0 0	0 1 0	0 0 1	-0.00475 0.00225 0.0038971
+
+q	0 0 0 0 0 0 0 0 0 0 0 0 0
+
+qmin	-inf -inf -inf -inf -inf -inf -inf -inf -inf -inf -inf -inf -inf 
+
+qmax	inf inf inf inf inf inf inf inf inf inf inf inf inf
+
+geometry	"" "" "" "" "" "V5/base_link.stl" "V5/link_0_1.stl" "V5/link_1_1.stl" "V5/link_2_1.stl" "V5/link_3_1.stl" "" "" ""
+
+mass	0 0 0 0 0 0.00101717 0.0160569 0.0262035 0.101322 0.0119024 0 0 0
+
+com	0 0 0	0 0 0	0 0 0	0 0 0	0 0 0	0.003069 -0.00493075 0.00609541	0.00384257 0.0208062 0.0154416	-0.00468956 0.0749999 0.00102429	0.000905542 0.0499994 2.1327e-07	-0.00515287 0.0248101 0.00185742	0 0 0	0 0 0	0 0 0
+
+inertia	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	9e-06 -1e-06 0 -1e-06 3e-06 -3e-06 0 -3e-06 8e-06	7.9e-05 0 0 0 2e-06 0 0 0 7.8e-05	0.000184 0 0 0 4e-06 0 0 0 0.000184	1.1e-05 0 0 0 1e-06 -1e-06 0 -1e-06 1e-05	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	0 0 0 0 0 0 0 0 0	
+
+torquemax	0 0 0 0 0 0 inf inf inf inf 0 0 0
+
+velmax	inf inf inf inf inf inf inf inf inf inf inf inf inf
+
+accmax	inf inf inf inf inf inf 10 10 10 10 inf inf inf
+
+
+joint floating 5 -1
+joint spin 6
+joint spin 7
+joint spin 8
+joint spin 9
+joint weld 10
+joint weld 11
+joint weld 12
+
+
+driver normal 6
+driver normal 7
+driver normal 8
+driver normal 9
+
+#mount 11 "V5/drain.stl" 1 0 0	0 -0.8660 -0.5	0 0.5 -0.8660	0 0 0
+#mount 11 "V5/stylet.stl" 1 0 0	0 -0.5 0.8660	0 -0.8660 -0.5	0 0 0
+
+servoP	100 100 100 100 
+servoI	0 0 0 0 
+servoD	10 10 10 10 
+
+dryFriction	0 0 0 0 
+viscousFriction	0 0 0 0 
+
