@@ -21,8 +21,12 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import android.os.Handler;
+
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView slideCounterTextView;
 
     private Button EVDButton;
+
+    private Button TestButton;
     private ImageButton leftButton;
     private ImageButton rightButton;
     private LinearLayout progressBarLayout;
@@ -59,11 +65,17 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this); // If using EdgeToEdge library; otherwise, remove
         setContentView(R.layout.pick_procedure_main);
 
+        TestButton = findViewById(R.id.dialog2);
 
         EVDButton = findViewById(R.id.EVDButton);
 
+
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
+        });
+
+        TestButton.setOnClickListener(v -> {
+            setDialog(1);
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -146,10 +158,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.pick_procedure_main);
 
         EVDButton = findViewById(R.id.EVDButton);
-
+        TestButton = findViewById(R.id.dialog2);
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
+        });
+
+        TestButton.setOnClickListener(v -> {
+            setDialog(1);
         });
 
     }
@@ -202,6 +218,31 @@ public class MainActivity extends AppCompatActivity {
             });
 
             dialog.show();
+
+
+            final int countdownTime = 10;
+            final AtomicInteger remainingTime = new AtomicInteger(countdownTime);
+
+            // Update the button text every second
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // Update button text
+                    button2.setText(String.format("Redo (%d seconds)", remainingTime.get()));
+
+                    // Decrease remaining time
+                    if (remainingTime.get() > 0) {
+                        remainingTime.decrementAndGet();
+                        // Repeat the countdown every second
+                        new Handler(Looper.getMainLooper()).postDelayed(this, 1000);
+                    } else {
+                        // Once countdown reaches 0, dismiss the dialog
+                        if (dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
+                    }
+                }
+            }, 1000);
         }
     }
     private void updateSlide() {
