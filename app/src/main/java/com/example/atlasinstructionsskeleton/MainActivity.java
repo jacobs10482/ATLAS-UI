@@ -29,6 +29,9 @@ import java.util.List;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+// Import for JSON quoting
+import org.json.JSONObject;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity"; // Tag for logging
@@ -83,9 +86,6 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        // Initialize ZeroMQ
-        initializeZeroMQ();
     }
 
     private void initializeZeroMQ() {
@@ -126,13 +126,22 @@ public class MainActivity extends AppCompatActivity {
                     String receivedData = zmqSubSocket.recvStr();
 
                     if (receivedData != null) {
-                        // Log the received data
-                        Log.d(TAG, "Received data from ZMQ: " + receivedData);
+                        // Pass the data to JavaScript
+                        //Log.d(TAG, "Received data in Android: " + receivedData);
+                        runOnUiThread(() -> passDataToJavaScript(receivedData));
                     }
                 }
             }
         });
         zmqThread.start();
+    }
+
+    private void passDataToJavaScript(String data) {
+        // Escape data to prevent JavaScript injection
+        String escapedData = JSONObject.quote(data);
+
+        String jsCode = "handleDataFromAndroid(" + escapedData + ");";
+        atlas3DView.evaluateJavascript(jsCode, null);
     }
 
     private void initializeWebView() {
@@ -201,6 +210,9 @@ public class MainActivity extends AppCompatActivity {
         initializeWebView();
 
         updateSlide();
+
+        // Initialize ZeroMQ
+        initializeZeroMQ();
     }
 
     private void voidOpenMenu() {
