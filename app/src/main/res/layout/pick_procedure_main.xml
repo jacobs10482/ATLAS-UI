@@ -76,6 +76,7 @@
                         android:text="External Ventricular Drain Placement\n\nTreats: High intracranial pressure, lorem ipsum, dolor sit amet" />
 
                     <Button
+                        android:id="@+id/dialog2"
                         android:layout_width="match_parent"
                         android:layout_height="100dp"
                         android:clickable="true"
@@ -86,6 +87,7 @@
                         android:text="Tumor Biopsy (Work in Progress)\n\nUse: acquire tumor tissue for diagnosis, lorem ipsum" />
 
                     <Button
+
                         android:layout_width="match_parent"
                         android:layout_height="100dp"
                         android:clickable="true"
