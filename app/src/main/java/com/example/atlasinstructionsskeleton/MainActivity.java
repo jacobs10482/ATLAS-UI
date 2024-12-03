@@ -55,6 +55,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView registrationErrorValue;
 
     private Button exitButton;
+
+    private TextView unconnectedText;
+    private TextView unconnected3dOverlay;
+
     private List<Slide> slides;
     private int currentSlideIndex = 0;
     private double currentProgress = 0;
@@ -68,6 +72,9 @@ public class MainActivity extends AppCompatActivity {
     private ZMQ.Socket zmqSubSocket;
     private Thread zmqThread;
     private boolean isZmqRunning = false;
+
+    // App state
+    private boolean isUnconnectedMode = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -294,14 +301,14 @@ public class MainActivity extends AppCompatActivity {
                 imageView.setVisibility(View.GONE);
                 atlas3DView.setVisibility(View.VISIBLE);
                 progressBarLayout.setVisibility(View.VISIBLE);
-                registrationErrorLayout.setVisibility(View.INVISIBLE);
+                registrationErrorLayout.setVisibility(View.GONE);
             }
         } else {
             // Show ImageView and hide WebView
             imageView.setVisibility(View.VISIBLE);
             atlas3DView.setVisibility(View.GONE);
-            progressBarLayout.setVisibility(View.INVISIBLE);
-            registrationErrorLayout.setVisibility(View.INVISIBLE);
+            progressBarLayout.setVisibility(View.GONE);
+            registrationErrorLayout.setVisibility(View.GONE);
 
             if (currentSlide.imageResId != 0) {
                 imageView.setImageResource(currentSlide.imageResId);
@@ -337,6 +344,27 @@ public class MainActivity extends AppCompatActivity {
         } else {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_yellow);
         }
+    }
+
+    private void setUnconnectedMode(boolean newUnconnectedModeState) {
+
+        isUnconnectedMode = newUnconnectedModeState;
+        updateUnconnectedMode();
+    }
+
+    private void updateUnconnectedMode() {
+
+        unconnectedText = findViewById(R.id.unconnectedText);
+        unconnected3dOverlay = findViewById(R.id.unconnected3dOverlay);
+
+        if (isUnconnectedMode) {
+            unconnectedText.setText("Unconnected Mode");
+            unconnected3dOverlay.setVisibility(View.VISIBLE);
+        } else {
+            unconnectedText.setText("");
+            unconnected3dOverlay.setVisibility(View.GONE);
+        }
+
     }
 
     @Override
