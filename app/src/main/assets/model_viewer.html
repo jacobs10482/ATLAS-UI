@@ -19,11 +19,16 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
 <!-- URDFLoader -->
 <script src="URDFLoader.js"></script>
+<!-- numeric.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
 
 <script>
     let scene, camera, renderer, controls;
     let robot; // Global variable for the robot model
-    let e1o =
+    let enc1 = 332.524331;
+    let enc2 = 332.996726;
+    let enc3 = 62.8639697;
+    let probe_state = 0;
 
     // Function to handle data received from Android
     function handleDataFromAndroid(data) {
@@ -50,17 +55,25 @@
     function updateScene(e1, e2, e3, e4, probe1) {
         if (robot) {
             // Set joint values (replace 'joint1', 'joint2', etc., with actual joint names)
-            robot.setJointValue('Rev5', THREE.Math.degToRad(e1));
-            robot.setJointValue('Rev6', THREE.Math.degToRad(e2));
-            robot.setJointValue('Rev7', THREE.Math.degToRad(e3));
-            robot.setJointValue('Rev8', THREE.Math.degToRad(e4));
+            robot.setJointValue('Rev5', THREE.Math.degToRad(-e1+enc3));
+            robot.setJointValue('Rev6', THREE.Math.degToRad(e2-enc2));
+            robot.setJointValue('Rev7', THREE.Math.degToRad(-e3+enc1));
+            robot.setJointValue('Rev8', THREE.Math.degToRad(-e4));
 
             // Update the robot's transformation
             robot.updateMatrixWorld(true);
 
             // Handle probe1 if needed
-            if (probe1 === 1) {
+            if (probe1 === 0 && probe_state === 0) {
                 // Implement any logic needed when probe1 is active
+                probe_state = 1;
+                console.log('Probe activated.');
+
+            } else if (probe1 === 1 && probe_state === 1) {
+                // Implement any logic needed when probe1 is inactive
+                probe_state = 0;
+                console.log('Probe deactivated.');
+
             }
         } else {
             console.warn('Robot model is not yet loaded.');
