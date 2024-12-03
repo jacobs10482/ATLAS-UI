@@ -24,6 +24,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // Import ZeroMQ classes
 import org.zeromq.ZContext;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView registrationErrorValue;
 
     private Button exitButton;
+    private Button testButton;
 
     private TextView unconnectedText;
     private TextView unconnected3dOverlay;
@@ -83,9 +85,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.pick_procedure_main);
 
         EVDButton = findViewById(R.id.EVDButton);
+        testButton = findViewById(R.id.dialog2);
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
+        });
+
+        testButton.setOnClickListener(v -> {
+            setDialog(1);
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -226,10 +233,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.pick_procedure_main);
 
         EVDButton = findViewById(R.id.EVDButton);
+        testButton = findViewById(R.id.dialog2);
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
         });
+
+        testButton.setOnClickListener(v -> {
+            setDialog(1);
+        });
+
     }
 
     private void setDialog(int x) {
@@ -279,6 +292,31 @@ public class MainActivity extends AppCompatActivity {
             });
 
             dialog.show();
+
+
+            final int countdownTime = 10;
+            final AtomicInteger remainingTime = new AtomicInteger(countdownTime);
+
+
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+
+                    button2.setText(String.format("Redo (%d seconds)", remainingTime.get()));
+
+
+                    if (remainingTime.get() > 0) {
+                        remainingTime.decrementAndGet();
+
+                        new Handler(Looper.getMainLooper()).postDelayed(this, 1000);
+                    } else {
+
+                        if (dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
+                    }
+                }
+            }, 1000);
         }
     }
 

@@ -40,7 +40,7 @@
 
     <Button
         android:id="@+id/dialog_redo_button"
-        android:layout_width="400sp"
+        android:layout_width="500sp"
         android:layout_height="100sp"
         android:text="Redo (10 seconds)"
         android:textSize="35sp"
