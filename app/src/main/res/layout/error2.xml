@@ -27,12 +27,12 @@
             android:background="?android:attr/selectableItemBackgroundBorderless" />
     </RelativeLayout>
 
-    <!-- TextView for the message in the dialog -->
+    <!-- TextView for the message in the dialog 175sp 95sp-->
     <TextView
         android:id="@+id/dialog_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Registration Error Exceeds 2mm Safe Limit! \nPlease Redo Calibration"
+        android:text="Registration Error Exceeds 2mm Safe Limit! \nPlease Redo Calibration\nPress X to cancel"
         android:textSize="40sp"
         android:textColor="@android:color/black"
         android:layout_marginBottom="16dp"
@@ -40,9 +40,9 @@
 
     <Button
         android:id="@+id/dialog_redo_button"
-        android:layout_width="175sp"
-        android:layout_height="95sp"
-        android:text="Redo"
+        android:layout_width="400sp"
+        android:layout_height="100sp"
+        android:text="Redo (10 seconds)"
         android:textSize="35sp"
         android:background="@drawable/button_red_border"
         android:textColor="@android:color/black"

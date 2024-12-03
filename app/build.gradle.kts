@@ -33,6 +33,7 @@ android {
 
 dependencies {
     implementation("com.google.ar.sceneform:core:1.17.1")
+    implementation("org.zeromq:jeromq:0.5.2")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
