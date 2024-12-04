@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isZmqRunning = false;
 
     // App state
-    private boolean isUnconnectedMode = true;
+    private boolean isUnconnectedMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (receivedData != null) {
                         // Pass the data to JavaScript
-                        //Log.d(TAG, "Received data in Android: " + receivedData);
+                        // Log.d(TAG, "Received data in Android: " + receivedData);
                         runOnUiThread(() -> passDataToJavaScript(receivedData));
                     }
                 }
