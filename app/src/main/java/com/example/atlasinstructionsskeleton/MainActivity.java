@@ -310,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
                 progressBar.setOnClickListener(v -> handlePointTouch());
             }
         } else {
-            // arrow gray out
+            // gray out arrows
             if (currentStep == 1) {
                 leftButton.setVisibility(View.INVISIBLE);
                 rightButton.setVisibility(View.VISIBLE);
