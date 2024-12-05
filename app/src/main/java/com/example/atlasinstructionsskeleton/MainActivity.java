@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private int pointsTouched = 0;
     private int totalPoints = 3;
     private double percentage = 100.0 / totalPoints;
+    private double regErrorMockUp = 2.1;
 
     // ZeroMQ context and sockets
     private ZContext zmqContext;
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isZmqRunning = false;
 
     // App state
-    private boolean isUnconnectedMode = true;
+    private boolean isUnconnectedMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (receivedData != null) {
                         // Pass the data to JavaScript
-                        //Log.d(TAG, "Received data in Android: " + receivedData);
+                        // Log.d(TAG, "Received data in Android: " + receivedData);
                         runOnUiThread(() -> passDataToJavaScript(receivedData));
                     }
                 }
@@ -191,7 +192,8 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView = findViewById(R.id.instructionTextView);
         imageView = findViewById(R.id.imageView);
         atlas3DView = findViewById(R.id.atlas3dView); // Initialize WebView
-
+        leftButton = findViewById(R.id.leftButton);
+        rightButton = findViewById(R.id.leftButton);
         // Load the HTML file in WebView
         atlas3DView.loadUrl("file:///android_asset/model_viewer.html");
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
@@ -307,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     dialog.dismiss();
+                    handleLeft();
                 }
             });
 
@@ -327,15 +330,30 @@ public class MainActivity extends AppCompatActivity {
                 atlas3DView.setVisibility(View.VISIBLE);
                 progressBarLayout.setVisibility(View.GONE);
                 registrationErrorLayout.setVisibility(View.VISIBLE);
-                updateRegistrationError(0);
+                updateRegistrationError(regErrorMockUp);
+                regErrorMockUp = 0.25;  // change the value to switch to different colors
+
             } else {
                 // Show WebView and hide ImageView
                 imageView.setVisibility(View.GONE);
                 atlas3DView.setVisibility(View.VISIBLE);
                 progressBarLayout.setVisibility(View.VISIBLE);
                 registrationErrorLayout.setVisibility(View.GONE);
+                progressBar.setOnClickListener(v -> handlePointTouch());
             }
         } else {
+            // gray out arrows
+            if (currentStep == 1) {
+                leftButton.setVisibility(View.INVISIBLE);
+                rightButton.setVisibility(View.VISIBLE);
+            } else if (currentStep == 8) {
+                leftButton.setVisibility(View.VISIBLE);
+                rightButton.setVisibility(View.INVISIBLE);
+            } else {
+                leftButton.setVisibility(View.VISIBLE);
+                rightButton.setVisibility(View.VISIBLE);
+            }
+
             // Show ImageView and hide WebView
             imageView.setVisibility(View.VISIBLE);
             atlas3DView.setVisibility(View.GONE);
@@ -352,7 +370,17 @@ public class MainActivity extends AppCompatActivity {
         slideCounterTextView.setText("Step " + currentStep + "/" + slides.size());
     }
 
-    private void updateProgress(int percentage) {
+    private void handlePointTouch() {
+        pointsTouched++;
+        if (pointsTouched < totalPoints) {
+            updateProgress(percentage);
+        } else if (pointsTouched == totalPoints) {
+            updateProgress(33);
+            new Handler(Looper.getMainLooper()).postDelayed(this::handleRight, 500);
+        }
+    }
+
+    private void updateProgress(double percentage) {
         currentProgress += percentage;
         int progress = (int) Math.floor(currentProgress + 0.5);
         progressBar.setProgress(progress);
