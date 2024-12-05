@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@android:color/black"
-        android:text="Unconnected mode is for familiarizing yourself with our interface. 3D visualizations of ATLAS will not work correctly in unconnected mode. Are you sure you don’t want to connect?"
+        android:text="Unconnected mode is for familiarizing yourself with our interface. 3D visualizations of ATLAS will not work correctly in unconnected mode. Are you sure you do not want to connect?"
         android:textSize="40sp"
         android:layout_marginBottom="16dp"
         android:gravity="center" />

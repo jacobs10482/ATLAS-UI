@@ -1,6 +1,7 @@
 package com.example.atlasinstructionsskeleton;
 
 import android.app.Dialog;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,8 +14,10 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -94,7 +97,10 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
     }
+
+
 
     private void initializeZeroMQ() {
         // Create ZeroMQ context
@@ -169,6 +175,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     private void handleRight() {
         if (currentSlideIndex < slides.size() - 1) {
             currentSlideIndex++;
@@ -230,9 +238,33 @@ public class MainActivity extends AppCompatActivity {
         EVDButton = findViewById(R.id.EVDButton);
 
         EVDButton.setOnClickListener(v -> {
-            EVDSlides();
+            showVideo();
         });
     }
+
+    private void showVideo() {
+        setContentView(R.layout.video_main);
+
+        // Initialize and set up the VideoView
+        VideoView videoView = findViewById(R.id.videoView);
+        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo.mp4);
+        videoView.setVideoURI(videoUri);
+
+        // Optional: Add media controller for playback controls
+        MediaController mediaController = new MediaController(this);
+        videoView.setMediaController(mediaController);
+        mediaController.setAnchorView(videoView);
+
+        // Start playing the video
+        videoView.setOnPreparedListener(mediaPlayer -> videoView.start());
+
+        // Optional: Add a button to move to the next slide (e.g., EVD slides)
+        Button nextButton = findViewById(R.id.nextSlide);
+        nextButton.setOnClickListener(v -> {
+            EVDSlides(); // Transition to EVD slides
+        });
+    }
+
 
     private void setDialog(int x) {
         Dialog dialog = new Dialog(this);
