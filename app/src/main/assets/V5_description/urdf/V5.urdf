@@ -181,6 +181,58 @@
       </geometry>
     </collision>
   </link>
+  <link name="tcp_link">
+    <inertial>       <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/> <!-- Minimal mass for visualization -->
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.00"/> <!-- Small sphere representing the TCP -->
+      </geometry>
+      <material name="red">
+        <color rgba="1.0 0.0 0.0 1.0"/> <!-- Red color for visibility -->
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="tcp_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.00475 0.00225 0.0038971"/>
+    <parent link="evd_link"/>
+    <child link="tcp_link"/>
+  </joint>
+  <link name="evd_link">
+    <inertial>       <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/> <!-- Minimal mass for visualization -->
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.00"/> <!-- Small sphere representing the EVD Link (effector) -->
+      </geometry>
+      <material name="red">
+        <color rgba="1.0 0.0 0.0 1.0"/> <!-- Red color for visibility -->
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="evd_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.00175 0.079937 0.021542"/>
+    <parent link="link_3_1"/>
+    <child link="evd_link"/>
+  </joint>
   <joint name="Rev5" type="continuous">
     <origin rpy="0 0 0" xyz="0.0 0.1 0.0"/>
     <parent link="link_2_1"/>

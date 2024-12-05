@@ -2,91 +2,213 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Model Viewer</title>
+    <title>3D Model Viewer with Registration and Point Clouds</title>
     <style>
+        /* Basic Styles */
         body { margin: 0; overflow: hidden; }
         #model-container { width: 100%; height: 100vh; }
+
+        /* Connection Status Indicator */
+        #connection-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .status-circle {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: red;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        /* Control Buttons */
+        .control-button {
+            position: absolute;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #ffffffaa;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        #reset-button { top: 50px; }
+
+        .control-button:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Progress Bar */
+        #progress-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        #progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #76c7c0;
+            transition: width 0.3s ease;
+        }
+
+        #progress-text {
+            font-size: 14px;
+            color: #333;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+<!-- 3D Model Container -->
 <div id="model-container"></div>
+
+<!-- Connection Status Indicator -->
+<div id="connection-status">
+    <span class="status-circle" id="status-circle"></span>
+    <span class="status-text" id="status-text">Not Connected</span>
+</div>
+
+<!-- Control Buttons -->
+<button id="reset-button" class="control-button">Reset Probe Point Cloud</button>
+
+<!-- Progress Bar -->
+<div id="progress-container">
+    <div id="progress-bar">
+        <div id="progress-fill"></div>
+    </div>
+    <div id="progress-text">Progress: 0%</div>
+</div>
 
 <!-- Three.js Library -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <!-- OrbitControls -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- GLTFLoader -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- STLLoader -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
 <!-- URDFLoader -->
 <script src="URDFLoader.js"></script>
-<!-- numeric.js Library -->
+<!-- Numeric.js Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
+<!-- KD-Tree.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/kd-tree-javascript@1.0.3/kdTree-min.min.js"></script>
 
 <script>
+    // Global Variables
     let scene, camera, renderer, controls;
-    let robot; // Global variable for the robot model
-    let enc1 = 332.524331;
-    let enc2 = 332.996726;
-    let enc3 = 62.8639697;
+    let robot; // URDF robot model
+    let probePointCloud, probeGeometry, probeMaterial;
+    let phantomPointCloud, phantomGeometry, phantomMaterial;
+    let redPointCloud, redGeometry, redMaterial;
+    let initialRegistrationPointCloud, initialRegGeometry, initialRegMaterial; // New: Initial Registration Point Cloud
+
+    const PROBE_MAX_POINTS = 2000;
+    const PHANTOM_MAX_POINTS = 500000;
+    let probePointsCount = 0;
+
+    let phantomModel, ventriclesModel;
+
+    // Encoder Offsets (Adjust as needed)
+    const enc1 = 332.524331;
+    const enc2 = 332.996726;
+    const enc3 = 62.8639697;
+
+    // Connection Status Elements
+    const statusCircle = document.getElementById('status-circle');
+    const statusText = document.getElementById('status-text');
+
+    // Last Frame Time
+    let lastFrameTime = new Date(0);
+
+    // Registration Variables
+    let fixedPoints = []; // Fixed points (red points)
+    let movingPoints = []; // Moving points (probe stage 1 points)
+    let tracingPoints = [];
+    const TRACING_MAX_POINTS = 2000;
+
+    // Define the distance function for 3D points
+    function distance(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dz = a.z - b.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    // Dimensions (3 for x, y, z)
+    const dimensions = ['x', 'y', 'z'];
+
+    // Global variable to store the KD-Tree
+    let fixedPointKDTree;
+    const MAX_SEARCH_RADIUS = 0.025; // Maximum search radius for KD-Tree
+
+    // Raycasting Variables
+    let raycaster = new THREE.Raycaster();
+    let rayDirection = new THREE.Vector3(0, 0, 1); // Initial direction along z-axis
+    let previousIntersection = false; // To track color changes and avoid redundant updates
+
+
+    let registrationMatrix = new THREE.Matrix4(); // Transformation matrix
+
+    // Registration States
+    let registrationState = "initial_registration"; // "initial_registration", "collecting_tracing_points", "icp_registration", "raycasting"
+
+    // Counters
+    let initialRegPointsCount = 0; // Tracks initial registration points
+
+    // Probe State Flag (0: inactive, 1: active)
     let probe_state = 0;
 
-    // Function to handle data received from Android
-    function handleDataFromAndroid(data) {
-        // Parse the data
-        let dataParts = data.split(',');
-        if (dataParts.length === 7) {
-            let count = parseInt(dataParts[0]);
-            let e4 = parseFloat(dataParts[1]);
-            let e3 = parseFloat(dataParts[2]);
-            let e2 = parseFloat(dataParts[3]);
-            let e1 = parseFloat(dataParts[4]);
-            let probe1 = parseInt(dataParts[5]);
-            let probe2 = parseInt(dataParts[6]);
-
-            // Update the robot model based on the angles
-            updateScene(e1, e2, e3, e4, probe1);
-
-        } else {
-            console.error('Received data in unexpected format:', data);
-        }
-    }
-
-    // Function to update the 3D scene with the new variables
-    function updateScene(e1, e2, e3, e4, probe1) {
-        if (robot) {
-            // Set joint values (replace 'joint1', 'joint2', etc., with actual joint names)
-            robot.setJointValue('Rev5', THREE.Math.degToRad(-e1+enc3));
-            robot.setJointValue('Rev6', THREE.Math.degToRad(e2-enc2));
-            robot.setJointValue('Rev7', THREE.Math.degToRad(-e3+enc1));
-            robot.setJointValue('Rev8', THREE.Math.degToRad(-e4));
-
-            // Update the robot's transformation
-            robot.updateMatrixWorld(true);
-
-            // Handle probe1 if needed
-            if (probe1 === 0 && probe_state === 0) {
-                // Implement any logic needed when probe1 is active
-                probe_state = 1;
-                console.log('Probe activated.');
-
-            } else if (probe1 === 1 && probe_state === 1) {
-                // Implement any logic needed when probe1 is inactive
-                probe_state = 0;
-                console.log('Probe deactivated.');
-
-            }
-        } else {
-            console.warn('Robot model is not yet loaded.');
-        }
-    }
-
-    // Initialize the 3D scene
+    /**
+     * Initializes the 3D scene.
+     */
     function init() {
         const container = document.getElementById('model-container');
 
         // Scene
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xcccccc); // Gray background
+        scene.background = new THREE.Color(0xcccccc);
 
         // Camera
         camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -110,36 +232,102 @@
         dirLight.position.set(-3, 10, -10);
         scene.add(dirLight);
 
-        // Initialize OrbitControls
-        try {
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true; // Smooth controls
-            controls.dampingFactor = 0.05;
-            controls.enableZoom = true; // Allow zoom
-            controls.enablePan = true; // Enable panning (translation)
-            controls.rotateSpeed = 0.5; // Adjust rotation speed
-            controls.minDistance = 0.1;
-            controls.maxDistance = 2;
-            controls.maxPolarAngle = Math.PI / 2;
-            console.log('OrbitControls initialized successfully.');
-        } catch (error) {
-            console.error('Failed to initialize OrbitControls:', error);
-        }
+        // OrbitControls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.rotateSpeed = 0.5;
+        controls.minDistance = 0.1;
+        controls.maxDistance = 2;
+        controls.maxPolarAngle = Math.PI;
 
-        // Load the URDF robot model
+        // Initialize Point Clouds
+        initPointClouds();
+
+        // Load Models
         loadURDFRobot();
+        loadPhantomModel();
+        loadVentriclesModel();
 
-        // Handle window resize
+        // Event Listeners
         window.addEventListener('resize', onWindowResize, false);
 
-        // Start animation
+        // Control Buttons
+        document.getElementById('reset-button').addEventListener('click', resetProbePointCloud);
+
+        // Start Connection Status Checker
+        startConnectionStatusChecker();
+
+        // Start Animation Loop
         animate();
+
+        // Initialize Progress Bar
+        resetProgressBar();
     }
 
-    // Function to load the URDF robot model
+    /**
+     * Initializes Probe, Phantom, Red, and Initial Registration Point Clouds.
+     */
+    function initPointClouds() {
+        // Probe Point Cloud (Blue)
+        const probePositions = new Float32Array(PROBE_MAX_POINTS * 3);
+        probeGeometry = new THREE.BufferGeometry();
+        probeGeometry.setAttribute('position', new THREE.BufferAttribute(probePositions, 3));
+        probeMaterial = new THREE.PointsMaterial({ color: 0x0000ff, size: 0.005 });
+        probePointCloud = new THREE.Points(probeGeometry, probeMaterial);
+        scene.add(probePointCloud);
+        console.log('Probe point cloud initialized.');
+
+        // Phantom Point Cloud (Green)
+        const phantomPositions = new Float32Array(PHANTOM_MAX_POINTS);
+        phantomGeometry = new THREE.BufferGeometry();
+        phantomGeometry.setAttribute('position', new THREE.BufferAttribute(phantomPositions, 3));
+        phantomMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.005 });
+        phantomPointCloud = new THREE.Points(phantomGeometry, phantomMaterial);
+        // scene.add(phantomPointCloud);
+        console.log('Phantom point cloud initialized.');
+
+        // Red Point Cloud (Fixed Points)
+        const redPositions = new Float32Array(3 * 3); // 3 points
+        // Example fixed points (adjust as needed)
+        redPositions.set([0.036, 0.025, 0.11], 0); // Nose tip
+        redPositions.set([0.036, 0.055, 0.088], 3); // Nasion
+        redPositions.set([0.065, 0.07, 0.086], 6); // Left brow ridge
+
+        redGeometry = new THREE.BufferGeometry();
+        redGeometry.setAttribute('position', new THREE.BufferAttribute(redPositions, 3));
+        redMaterial = new THREE.PointsMaterial({ color: 0xff0000, size: 0.01 });
+        redPointCloud = new THREE.Points(redGeometry, redMaterial);
+        scene.add(redPointCloud);
+        console.log('Red point cloud (fixed points) initialized.');
+
+        // Populate fixedPoints array
+        for (let i = 0; i < 3; i++) {
+            const x = redPositions[i * 3];
+            const y = redPositions[i * 3 + 1];
+            const z = redPositions[i * 3 + 2];
+            fixedPoints.push([x, y, z]);
+        }
+        console.log('Fixed points stored for registration.');
+
+        // **New: Initial Registration Point Cloud (Yellow)**
+        const initialRegPositions = new Float32Array(3 * 3); // 3 points
+        initialRegGeometry = new THREE.BufferGeometry();
+        initialRegGeometry.setAttribute('position', new THREE.BufferAttribute(initialRegPositions, 3));
+        initialRegMaterial = new THREE.PointsMaterial({ color: 0xffff00, size: 0.01 });
+        initialRegistrationPointCloud = new THREE.Points(initialRegGeometry, initialRegMaterial);
+        // scene.add(initialRegistrationPointCloud);
+        console.log('Initial Registration point cloud initialized.');
+    }
+
+    /**
+     * Function to load the URDF robot model
+     */
     function loadURDFRobot() {
         const manager = new THREE.LoadingManager();
-        const loader = new URDFLoader( manager );
+        const loader = new URDFLoader(manager);
 
         // Set the package path (where your meshes are located)
         loader.packages = {
@@ -149,20 +337,1006 @@
         // Load the URDF file
         loader.load('./V5_description/urdf/V5.urdf', function (urdfRobot) {
             robot = urdfRobot;
-            scene.add(robot);
+            // scene.add(robot);
 
             // Adjust the robot's position, rotation, or scale
             robot.position.set(0, 0, 0);
-            robot.rotation.x = - Math.PI / 2; // Adjust as necessary
+            robot.rotation.x = 0; // Adjust as necessary
 
             console.log('URDF robot loaded successfully.');
-            console.log('Available joints:', robot.joints);
+            console.log('Available joints:', Object.keys(robot.joints));
+            console.log('Available links:', Object.keys(robot.links));
+
+            // Access the TCP link
+            const tcpLink = robot.links['tcp_link'];
+            if (tcpLink) {
+                console.log('TCP link found:', tcpLink);
+            } else {
+                console.warn('TCP link not found.');
+            }
+
         }, undefined, function (error) {
             console.error('An error occurred while loading the URDF:', error);
         });
     }
 
-    // Function to handle window resize
+    /**
+     * Loads the Phantom GLB model.
+     */
+    function loadPhantomModel() {
+        const loader = new THREE.GLTFLoader();
+
+        loader.load(
+            'file:///android_asset/phantom.glb', // Update the path as necessary
+            function (gltf) {
+                phantomModel = gltf.scene;
+                scene.add(phantomModel);
+                phantomModel.position.set(0, 0, 0);
+                phantomModel.scale.set(1, 1, 1);
+                phantomModel.rotation.set(Math.PI / 2, 0, 0); // Adjust as needed
+                console.log('Phantom model loaded.');
+
+                // Modify material for transparency if needed
+                phantomModel.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.transparent = true;
+                        child.material.opacity = 0.6;
+                        child.material.depthWrite = false;
+                        child.material.blending = THREE.NormalBlending;
+                    }
+                });
+
+                // Sample points from Phantom model
+                samplePhantomPointCloud();
+            },
+            undefined,
+            function (error) {
+                console.error('Error loading Phantom model:', error);
+            }
+        );
+    }
+
+    /**
+     * Loads the Ventricles GLB model and sets its color to red.
+     */
+    function loadVentriclesModel() {
+        const loader = new THREE.GLTFLoader();
+
+        loader.load(
+            'file:///android_asset/ventricles.glb', // Update the path as necessary
+            function (gltf) {
+                ventriclesModel = gltf.scene;
+                scene.add(ventriclesModel);
+                ventriclesModel.position.set(0, -0.070, 0); // Adjust as needed
+                ventriclesModel.scale.set(1, 1, 1);
+                ventriclesModel.rotation.set(0, 0, 0);
+                ventriclesModel.updateMatrixWorld(true);
+                console.log('Ventricles model loaded.');
+
+                // Set color to red
+                ventriclesModel.traverse(function (child) {
+                    if (child.isMesh && child.material && child.material.color) {
+                        child.material.color.set(0xff0000);
+                        child.material.needsUpdate = true;
+                    }
+                });
+            },
+            undefined,
+            function (error) {
+                console.error('Error loading Ventricles model:', error);
+            }
+        );
+    }
+
+    /**
+     * Samples points from the Phantom model and builds the KD-Tree.
+     */
+    function samplePhantomPointCloud() {
+        if (!phantomModel) {
+            console.warn('Phantom model not loaded yet.');
+            return;
+        }
+
+        phantomModel.updateMatrixWorld(true);
+        const geometries = getMeshGeometries(phantomModel);
+        let allVertices = [];
+
+        geometries.forEach((geometry) => {
+            const positionAttribute = geometry.attributes.position;
+            for (let i = 0; i < positionAttribute.count; i++) {
+                const vertex = new THREE.Vector3();
+                vertex.fromBufferAttribute(positionAttribute, i);
+                vertex.applyMatrix4(phantomModel.matrixWorld);
+                allVertices.push({ x: vertex.x * 0.001, y: vertex.y * 0.001, z: vertex.z * 0.001 }); // Scaling
+            }
+        });
+
+        console.log(`Total vertices from Phantom model: ${allVertices.length}`);
+
+        // Initialize Phantom Point Cloud
+        allVertices.forEach((point, index) => {
+            if (index >= PHANTOM_MAX_POINTS) return; // Prevent exceeding buffer
+            phantomGeometry.attributes.position.setXYZ(index, point.x, point.y, point.z);
+        });
+
+        phantomGeometry.setDrawRange(0, allVertices.length);
+        phantomGeometry.attributes.position.needsUpdate = true;
+        console.log('Phantom Point Cloud populated with sampled points.');
+
+        // Build KD-Tree
+        fixedPointKDTree = new kdTree(allVertices, distance, dimensions);
+        console.log('KD-Tree built for Fixed Point Cloud.');
+    }
+
+    /**
+     * Retrieves all BufferGeometries from a model.
+     * @param {THREE.Object3D} object - The model to traverse.
+     * @returns {Array<THREE.BufferGeometry>} - Array of geometries.
+     */
+    function getMeshGeometries(object) {
+        let geometries = [];
+        object.traverse(function (child) {
+            if (child.isMesh) {
+                let geometry = child.geometry;
+                if (!(geometry instanceof THREE.BufferGeometry)) {
+                    geometry = new THREE.BufferGeometry().fromGeometry(child.geometry);
+                }
+                geometries.push(geometry);
+            }
+        });
+        return geometries;
+    }
+
+    /**
+     * Adds a point to the specified point cloud.
+     * @param {THREE.Vector3} position - The position to add.
+     * @param {string} type - 'initial_registration' or 'tracing'.
+     */
+    function addPointToPointCloud(position, type) {
+        if (type === 'initial_registration') {
+            if (initialRegPointsCount >= 3) {
+                console.warn('Initial Registration Point Cloud has already collected 3 points.');
+                return;
+            }
+            initialRegGeometry.attributes.position.setXYZ(initialRegPointsCount, position.x, position.y, position.z);
+            initialRegPointsCount++;
+            initialRegGeometry.setDrawRange(0, initialRegPointsCount);
+            initialRegGeometry.attributes.position.needsUpdate = true;
+            console.log(`Initial Registration Point ${initialRegPointsCount} added: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
+
+            // Update Progress Bar for Initial Registration
+            updateProgressBar('initial_registration', (initialRegPointsCount / 3) * 100);
+            if (initialRegPointsCount === 3) {
+                // Initial Registration Complete
+                updateProgressBar('initial_registration', 100);
+                // Populate movingPoints array
+                for (let i = 0; i < 3; i++) {
+                    const x = initialRegistrationPointCloud.geometry.attributes.position.array[i * 3];
+                    const y = initialRegistrationPointCloud.geometry.attributes.position.array[i * 3 + 1];
+                    const z = initialRegistrationPointCloud.geometry.attributes.position.array[i * 3 + 2];
+                    movingPoints.push([x, y, z]);
+                }
+
+                notifyAndroidRegistrationStepComplete(1);
+                performRegistration();
+                setTimeout(() => {
+                    switchToTracingMode();
+                }, 1000); // wait 1 second before switching to tracing mode
+            }
+        } else if (type === 'tracing') {
+            if (tracingPoints.length >= TRACING_MAX_POINTS) {
+                console.warn('Tracing Point Cloud reached maximum capacity.');
+                return;
+            }
+            tracingPoints.push([position.x, position.y, position.z]);
+            console.log(`Tracing Point ${tracingPoints.length} added: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
+
+            probePointCloud.geometry.attributes.position.setXYZ(tracingPoints.length, position.x, position.y, position.z);
+            probePointCloud.geometry.setDrawRange(0, tracingPoints.length + 1);
+            probePointCloud.geometry.attributes.position.needsUpdate = true;
+
+            // Update Progress Bar for Tracing Points Collection
+            updateProgressBar('tracing', (tracingPoints.length / TRACING_MAX_POINTS) * 100);
+            if (tracingPoints.length === TRACING_MAX_POINTS) {
+                // Tracing Points Collection Complete
+                updateProgressBar('tracing', 100);
+                notifyAndroidRegistrationStepComplete(2);
+                performICPRegistration();
+            }
+        }
+    }
+
+    /**
+     * Switches the registration state from initial registration to tracing.
+     */
+    function switchToTracingMode() {
+        registrationState = "collecting_tracing_points";
+        tracingPoints = [];
+        scene.add(robot);
+        console.log('Switched to Tracing Points Collection mode.');
+        // Optionally, reset the initial registration point cloud visibility
+        // initialRegistrationPointCloud.visible = false;
+    }
+
+    /**
+     * Updates the progress bar based on the current step and progress.
+     * @param {string} step - 'initial_registration', 'tracing', or 'icp'.
+     * @param {number} progress - Progress percentage (0-100).
+     */
+    function updateProgressBar(step, progress) {
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+
+        if (step === 'initial_registration') {
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `Initial Registration: ${Math.min(progress, 100).toFixed(1)}%`;
+        } else if (step === 'tracing') {
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `Tracing Points Collection: ${Math.min(progress, 100).toFixed(1)}%`;
+        } else if (step === 'icp') {
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `ICP Registration: ${Math.min(progress, 100).toFixed(1)}%`;
+        }
+    }
+
+    /**
+     * Resets the progress bar to 0%.
+     */
+    function resetProgressBar() {
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        progressFill.style.width = '0%';
+        progressText.textContent = 'Progress: 0%';
+    }
+
+    /**
+     * Performs Initial Registration with Arun's SVD-based algorithm.
+     */
+    function performRegistration() {
+        if (registrationState !== "initial_registration") {
+            console.warn('Registration is not in the correct state.');
+            return;
+        }
+
+        if (movingPoints.length !== fixedPoints.length) {
+            console.warn('Wrong number of points collected for registration.', movingPoints.length, fixedPoints.length);
+            return;
+        }
+
+        console.log('Starting Initial Registration...');
+
+        let transformedMovingPoints = movingPoints.map(point => point.slice()); // Deep copy
+
+        // Compute transformation using Arun's SVD-based registration
+        let initialTransformation = computeArunRegistration(fixedPoints, movingPoints);
+
+        console.log('Initial Registration completed.');
+
+        // Update registration matrix
+        registrationMatrix.copy(initialTransformation);
+        console.log('Updated Registration Matrix:', registrationMatrix);
+
+        // Apply transformation to robot
+        updateRobotOrigin(registrationMatrix);
+
+        // Visualize points
+        // visualizePoints(registrationMatrix);
+
+        // Compute registration error
+        let transformedMoving = transformedMovingPoints.map(point => {
+            let transformedVector = new THREE.Vector3(point[0], point[1], point[2]).applyMatrix4(registrationMatrix);
+            return [transformedVector.x, transformedVector.y, transformedVector.z];
+        });
+        computeRegistrationError(fixedPoints, transformedMoving);
+    }
+
+    /**
+     * Performs Iterative Closest Point (ICP) Registration with Arun's SVD-based algorithm.
+     */
+    function performICPRegistration() {
+        if (registrationState !== "collecting_tracing_points") {
+            console.warn('ICP Registration is not in the correct state.');
+            return;
+        }
+
+        if (tracingPoints.length === 0) {
+            console.warn('No tracing points collected for ICP.');
+            alert('No tracing points collected for ICP. Please collect tracing points first.');
+            return;
+        }
+
+        // Define number of ICP iterations and thresholds
+        const ICP_ITERATIONS = 100;
+        const CONVERGENCE_THRESHOLD = 0.00001; // 0.1 mm
+        const ROTATION_THRESHOLD = 0.01; // radians (~0.57 degrees)
+        const IMPROVEMENT_THRESHOLD = 0.000001; // meters
+
+        console.log('Starting ICP Registration...');
+        registrationState = "icp_registration";
+
+        let transformedTracingPoints = tracingPoints.map(point => point.slice()); // Deep copy
+
+        // Initialize accumulated transformation
+        let accumulatedTransformation = new THREE.Matrix4().identity();
+
+        let fixedCorresponding = [];
+        let movingCorresponding = [];
+
+        // Initialize variables for tracking convergence
+        let previousMovement = Infinity;
+
+        // Perform ICP iterations
+        for (let iter = 0; iter < ICP_ITERATIONS; iter++) {
+            console.log(`ICP Iteration ${iter + 1}`);
+
+            // Find closest correspondences using KD-Tree
+            let correspondences = findClosestPoints(transformedTracingPoints);
+
+            fixedCorresponding = correspondences.fixed;
+            movingCorresponding = correspondences.moving;
+
+            console.log("Number of correspondences", fixedCorresponding.length);
+
+            if (fixedCorresponding.length < 3) {
+                console.warn('Not enough correspondences for registration.');
+                break;
+            }
+
+            // Compute transformation using Arun's SVD-based registration
+            let icpTransformation = computeArunRegistration(fixedCorresponding, movingCorresponding);
+
+            if (!icpTransformation) {
+                console.warn('Transformation computation failed.');
+                break;
+            }
+
+            // Apply transformation to tracing points
+            transformedTracingPoints = transformedTracingPoints.map(point => {
+                let vec = new THREE.Vector3(point[0], point[1], point[2]).applyMatrix4(icpTransformation);
+                return [vec.x, vec.y, vec.z];
+            });
+
+            // Accumulate transformation
+            accumulatedTransformation.premultiply(icpTransformation); // Use premultiply for correct order
+            console.log('Accumulated Transformation Matrix:', accumulatedTransformation.toArray());
+
+            // **Convergence Check: Translation**
+            let translationVector = new THREE.Vector3();
+            translationVector.setFromMatrixPosition(icpTransformation);
+            let movement = translationVector.length(); // Compute the magnitude of translation
+
+            console.log(`Iteration ${iter + 1}: Movement = ${movement} meters`);
+
+            // Convergence Check: Rotation
+            let rotationQuaternion = new THREE.Quaternion();
+            icpTransformation.decompose(new THREE.Vector3(), rotationQuaternion, new THREE.Vector3());
+            let angle = rotationQuaternion.angleTo(new THREE.Quaternion()); // Angle to identity rotation
+
+            console.log(`Iteration ${iter + 1}: Rotation Angle = ${angle} radians`);
+
+            // **Convergence Condition: Both Translation and Rotation Below Thresholds**
+            if (movement < CONVERGENCE_THRESHOLD && angle < ROTATION_THRESHOLD) {
+                console.log(`Convergence reached at iteration ${iter + 1} with movement ${movement} meters and rotation ${angle} radians.`);
+                break;
+            }
+
+            // **Convergence Check: Minimal Improvement**
+            let improvement = Math.abs(previousMovement - movement);
+            console.log(`Iteration ${iter + 1}: Improvement = ${improvement} meters`);
+
+            if (improvement < IMPROVEMENT_THRESHOLD) {
+                console.log(`Minimal improvement reached at iteration ${iter + 1}. Terminating ICP.`);
+                break;
+            }
+
+            previousMovement = movement;
+        }
+
+        console.log('ICP Registration completed.');
+
+        // Update registration matrix
+        registrationMatrix.copy(accumulatedTransformation);
+        console.log('Updated Final ICP Registration Matrix:', registrationMatrix.toArray());
+
+        // **Apply the accumulated transformation once after ICP concludes**
+        updateRobotOrigin(registrationMatrix);
+
+        // **Transition to Raycasting State**
+        registrationState = "raycasting";
+        console.log('Transitioned to Raycasting State.');
+
+        visualizePoints(registrationMatrix);
+
+        // Compute registration error
+        let transformedMoving = transformedTracingPoints.map(point => {
+            let transformedVector = new THREE.Vector3(point[0], point[1], point[2]).applyMatrix4(registrationMatrix);
+            return [transformedVector.x, transformedVector.y, transformedVector.z];
+        });
+        computeRegistrationError(fixedCorresponding, transformedMoving); // Adjust based on data source
+
+        // **Notify Android that ICP is complete and Raycasting is starting**
+        notifyAndroidRegistrationStepComplete(3); // Assuming step 3 is Raycasting
+    }
+
+
+
+
+    /**
+     * Extracts [x, y, z] positions from a THREE.Points object.
+     * @param {THREE.Points} pointCloud - The point cloud.
+     * @returns {Array<Array<number>>} - Array of [x, y, z] points.
+     */
+    function extractPointCloudPositions(pointCloud) {
+        let positions = pointCloud.geometry.attributes.position.array;
+        let points = [];
+        for (let i = 0; i < positions.length; i += 3) {
+            points.push([positions[i], positions[i + 1], positions[i + 2]]);
+        }
+        return points;
+    }
+
+    /**
+     * Finds the closest fixed point for each moving point using KD-Tree.
+     * @param {Array<Array<number>>} moving - Moving points.
+     * @returns {Object} - Object with 'fixed' and 'moving' arrays.
+     */
+    function findClosestPoints(moving) {
+        let fixedCorresponding = [];
+        let movingCorresponding = [];
+
+        moving.forEach(movPoint => {
+            // Query the KD-Tree for the nearest fixed point
+            const nearest = fixedPointKDTree.nearest({ x: movPoint[0], y: movPoint[1], z: movPoint[2] }, 1);
+            if (nearest.length > 0 && nearest[0][1] <= MAX_SEARCH_RADIUS) {
+                fixedCorresponding.push([nearest[0][0].x, nearest[0][0].y, nearest[0][0].z]);
+                movingCorresponding.push(movPoint);
+            }
+        });
+
+        return { fixed: fixedCorresponding, moving: movingCorresponding };
+    }
+
+
+    /**
+     * Computes the transformation matrix using Arun's SVD-based registration for an arbitrary number of points.
+     * @param {Array<Array<number>>} fixedPoints - Array of fixed [x, y, z] points.
+     * @param {Array<Array<number>>} movingPoints - Array of moving [x, y, z] points.
+     * @returns {THREE.Matrix4|null} - Transformation matrix aligning movingPoints to fixedPoints, or null if an error occurs.
+     */
+    function computeArunRegistration(fixedPoints, movingPoints) {
+        console.log('FixedPoints in performReg:', fixedPoints);
+        console.log('MovingPoints in performReg:', movingPoints);
+
+        const numPoints = fixedPoints.length;
+
+        // Input Validation
+        if (numPoints !== movingPoints.length) {
+            console.error('The number of fixed points and moving points must be the same.');
+            alert('Error: The number of fixed points and moving points must be identical.');
+            return null;
+        }
+
+        if (numPoints < 3) {
+            console.error('Registration requires at least 3 fixed and 3 moving points.');
+            alert('Error: Please ensure you have collected at least 3 corresponding points from the probe before registering.');
+            return null;
+        }
+
+        try {
+            // Convert points to numeric.js matrices (Nx3)
+            let fixed = fixedPoints.map(point => [point[0], point[1], point[2]]);
+            let moving = movingPoints.map(point => [point[0], point[1], point[2]]);
+
+            console.log('Fixed Matrix:', fixed);
+            console.log('Moving Matrix:', moving);
+
+            // Calculate centroids
+            let fixedCentroid = computeCentroid(fixed);
+            let movingCentroid = computeCentroid(moving);
+
+            console.log('Fixed Centroid:', fixedCentroid);
+            console.log('Moving Centroid:', movingCentroid);
+
+            // Center the points by subtracting centroids
+            let q1 = centerPoints(fixed, fixedCentroid); // (Nx3)
+            let q2 = centerPoints(moving, movingCentroid); // (Nx3)
+
+            console.log('Q1 Matrix (Fixed - Centroid):', q1);
+            console.log('Q2 Matrix (Moving - Centroid):', q2);
+
+            // Compute covariance matrix H = q1^T * q2
+            let H = numeric.dot(numeric.transpose(q1), q2); // (3x3)
+            console.log('Covariance Matrix H:', H);
+
+            // Perform SVD on H
+            let svdResult = numeric.svd(H);
+            let U = svdResult.U;
+            let S = svdResult.S;
+            let V = svdResult.V;
+
+            console.log('SVD Results - U Matrix:', U);
+            console.log('SVD Results - S Vector:', S);
+            console.log('SVD Results - V Matrix:', V);
+
+            // Compute rotation matrix R = V * U^T
+            let UT = numeric.transpose(U);
+            let R = numeric.dot(V, UT);
+            console.log('Initial Rotation Matrix R:', R);
+
+            // Compute determinant of R
+            let detR = numeric.det(R);
+            console.log('Determinant of R:', detR);
+
+            // Correct reflection if necessary
+            if (detR < 0) {
+                console.warn("Reflection detected. Correcting for proper rotation.");
+                // Flip the sign of the third column of V to ensure a right-handed coordinate system
+                V[2] = numeric.neg(V[2]);
+                R = numeric.dot(V, numeric.transpose(U));
+                detR = numeric.det(R);
+                console.log('Corrected Rotation Matrix R:', R);
+                console.log('Determinant of corrected R:', detR);
+            }
+
+            // Compute translation vector T = movingCentroid - R * fixedCentroid
+            // Perform matrix multiplication R * fixedCentroid
+            let R_fixedCentroid = numeric.dot(R, fixedCentroid); // [x, y, z]
+            let T = numeric.sub(movingCentroid, R_fixedCentroid); // [x, y, z]
+            console.log('Translation Vector T:', T);
+
+            // Create transformation matrix (4x4)
+            let transformationMatrixNumeric = [
+                [R[0][0], R[0][1], R[0][2], T[0]],
+                [R[1][0], R[1][1], R[1][2], T[1]],
+                [R[2][0], R[2][1], R[2][2], T[2]],
+                [0,       0,       0,       1]
+            ];
+            console.log('Transformation Matrix:', transformationMatrixNumeric);
+
+            // Flatten the matrix in column-major order for Three.js
+            let flatMatrix = [
+                transformationMatrixNumeric[0][0], transformationMatrixNumeric[1][0], transformationMatrixNumeric[2][0], transformationMatrixNumeric[3][0],
+                transformationMatrixNumeric[0][1], transformationMatrixNumeric[1][1], transformationMatrixNumeric[2][1], transformationMatrixNumeric[3][1],
+                transformationMatrixNumeric[0][2], transformationMatrixNumeric[1][2], transformationMatrixNumeric[2][2], transformationMatrixNumeric[3][2],
+                transformationMatrixNumeric[0][3], transformationMatrixNumeric[1][3], transformationMatrixNumeric[2][3], transformationMatrixNumeric[3][3]
+            ];
+
+            // Create Three.js Matrix4 from the flattened array
+            let transformationMatrix = new THREE.Matrix4();
+            transformationMatrix.fromArray(flatMatrix);
+
+            // **Note**: The original code inverts the transformation matrix.
+            // This is typically not required unless there's a specific reason.
+            // If you need to invert the transformation, uncomment the following line:
+            transformationMatrix = transformationMatrix.invert();
+
+            console.log('Registration transformation matrix (Three.js Matrix4):', transformationMatrix.toArray());
+
+            // Update the global registrationMatrix if needed
+            registrationMatrix.copy(transformationMatrix);
+            console.log('Global Registration Matrix updated.');
+
+            return transformationMatrix;
+
+        } catch (error) {
+            console.error('An error occurred during registration:', error);
+            alert('An error occurred during registration. Please check the console for details.');
+            return null;
+        }
+    }
+
+    /**
+     * Computes the centroid of a set of points.
+     * @param {Array<Array<number>>} points - Array of [x, y, z] points.
+     * @returns {Array<number>} - Centroid [x, y, z].
+     */
+    function computeCentroid(points) {
+        let centroid = [0, 0, 0];
+        points.forEach(point => {
+            centroid[0] += point[0];
+            centroid[1] += point[1];
+            centroid[2] += point[2];
+        });
+        centroid = centroid.map(coord => coord / points.length);
+        return centroid;
+    }
+
+    /**
+     * Centers points by subtracting the centroid.
+     * @param {Array<Array<number>>} points - Array of [x, y, z] points.
+     * @param {Array<number>} centroid - Centroid [x, y, z].
+     * @returns {Array<Array<number>>} - Centered points.
+     */
+    function centerPoints(points, centroid) {
+        return points.map(point => [
+            point[0] - centroid[0],
+            point[1] - centroid[1],
+            point[2] - centroid[2]
+        ]);
+    }
+
+    /**
+     * Visualizes fixed points, initial registration points, tracing points, and transformed tracing points.
+     * @param {THREE.Matrix4} transformationMatrix - The transformation matrix.
+     */
+    function visualizePoints(transformationMatrix) {
+        // Remove existing visualizations
+        ['fixedPointsGroup', 'initialRegPointsGroup', 'tracingPointsGroup', 'transformedTracingPointsGroup'].forEach(groupName => {
+            if (window[groupName]) {
+                scene.remove(window[groupName]);
+            }
+        });
+
+        // Fixed Points (Red)
+        let fixedGeometry = new THREE.BufferGeometry();
+        let fixedPositions = [];
+        fixedPoints.forEach(point => {
+            fixedPositions.push(point[0], point[1], point[2]);
+        });
+        fixedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(fixedPositions, 3));
+        let fixedMaterial = new THREE.PointsMaterial({ color: 0xff0000, size: 0.01 });
+        window.fixedPointsGroup = new THREE.Points(fixedGeometry, fixedMaterial);
+        scene.add(window.fixedPointsGroup);
+
+        // Initial Registration Points (Yellow)
+        let initialRegGeometryVis = new THREE.BufferGeometry();
+        let initialRegPositions = [];
+        for (let i = 0; i < initialRegPointsCount; i++) {
+            initialRegPositions.push(
+                initialRegGeometry.attributes.position.getX(i),
+                initialRegGeometry.attributes.position.getY(i),
+                initialRegGeometry.attributes.position.getZ(i)
+            );
+        }
+        initialRegGeometryVis.setAttribute('position', new THREE.Float32BufferAttribute(initialRegPositions, 3));
+        let initialRegMaterial = new THREE.PointsMaterial({ color: 0xffff00, size: 0.01 });
+        window.initialRegPointsGroup = new THREE.Points(initialRegGeometryVis, initialRegMaterial);
+        scene.add(window.initialRegPointsGroup);
+
+        // Tracing Points (Blue)
+        let tracingGeometry = new THREE.BufferGeometry();
+        let tracingPositions = [];
+        tracingPoints.forEach(point => {
+            tracingPositions.push(point[0], point[1], point[2]);
+        });
+        tracingGeometry.setAttribute('position', new THREE.Float32BufferAttribute(tracingPositions, 3));
+        let tracingMaterial = new THREE.PointsMaterial({ color: 0x0000ff, size: 0.005 });
+        window.tracingPointsGroup = new THREE.Points(tracingGeometry, tracingMaterial);
+        scene.add(window.tracingPointsGroup);
+
+        // Transformed Tracing Points (Green)
+        let transformedGeometry = new THREE.BufferGeometry();
+        let transformedPositions = [];
+        tracingPoints.forEach(point => {
+            let vec = new THREE.Vector3(point[0], point[1], point[2]);
+            vec.applyMatrix4(transformationMatrix);
+            transformedPositions.push(vec.x, vec.y, vec.z);
+        });
+        transformedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(transformedPositions, 3));
+        let transformedMaterial = new THREE.PointsMaterial({ color: 0x888888, size: 0.005 });
+        window.transformedTracingPointsGroup = new THREE.Points(transformedGeometry, transformedMaterial);
+        scene.add(window.transformedTracingPointsGroup);
+
+        console.log('Point visualizations updated.');
+    }
+
+    /**
+     * Updates the robot's origin based on the registration matrix.
+     * @param {THREE.Matrix4} matrix - The transformation matrix.
+     */
+    function updateRobotOrigin(matrix) {
+        if (!robot) {
+            console.error('Robot model not loaded.');
+            return;
+        }
+
+        robot.applyMatrix4(matrix);
+        robot.updateMatrixWorld(true);
+        console.log('Robot origin updated with registration matrix.');
+    }
+
+    /**
+     * Starts a periodic check to update connection status.
+     */
+    function startConnectionStatusChecker() {
+        setInterval(() => {
+            const currentTime = Date.now();
+            const timeSinceLastFrame = currentTime - lastFrameTime;
+
+            if (timeSinceLastFrame <= 1000) { // 1 second threshold
+                updateConnectionStatus(true);
+            } else {
+                updateConnectionStatus(false);
+            }
+        }, 500); // Check every 500ms
+    }
+
+    /**
+     * Updates the connection status indicator.
+     * @param {boolean} isConnected - Connection status.
+     */
+    function updateConnectionStatus(isConnected) {
+        if (isConnected) {
+            statusCircle.style.backgroundColor = 'green';
+            statusText.textContent = 'Connected';
+        } else {
+            statusCircle.style.backgroundColor = 'red';
+            statusText.textContent = 'Not Connected';
+        }
+    }
+
+    /**
+     * Handles data received from Android via the JavaScript interface.
+     * Expected data format: "count,e4,e3,e2,e1,probe1,probe2"
+     * @param {string} data - The data string from Android.
+     */
+    window.handleDataFromAndroid = function(data) {
+        lastFrameTime = Date.now();
+
+        let dataParts = data.split(',');
+        if (dataParts.length === 7) {
+            let count = parseInt(dataParts[0]);
+            let e4 = parseFloat(dataParts[1]);
+            let e3 = parseFloat(dataParts[2]);
+            let e2 = parseFloat(dataParts[3]);
+            let e1 = parseFloat(dataParts[4]);
+            let probe1 = parseInt(dataParts[5]);
+            let probe2 = parseInt(dataParts[6]);
+
+            updateScene(e1, e2, e3, e4, probe1);
+        } else {
+            console.error('Unexpected data format from Android:', data);
+        }
+    };
+
+    /**
+     * Function to update the 3D scene with the new variables
+     */
+    function updateScene(e1, e2, e3, e4, probe1) {
+        if (robot) {
+            // Set joint values (replace 'Rev5', 'Rev6', etc., with actual joint names)
+            robot.setJointValue('Rev5', THREE.Math.degToRad(-e1 + enc3));
+            robot.setJointValue('Rev6', THREE.Math.degToRad(e2 - enc2));
+            robot.setJointValue('Rev7', THREE.Math.degToRad(-e3 + enc1));
+            robot.setJointValue('Rev8', THREE.Math.degToRad(-e4));
+
+            // Update the robot's transformation
+            robot.updateMatrixWorld(true);
+
+            // Measure the TCP's world position
+            const tcpLink = robot.links['tcp_link'];
+            if (tcpLink) {
+                const tcpWorldPosition = new THREE.Vector3();
+                tcpLink.getWorldPosition(tcpWorldPosition);
+                // console.log('TCP World Position:', tcpWorldPosition);
+
+                // Handle probe1 activation/deactivation
+                if (probe1 === 0 && probe_state === 0 &&  probePointsCount < 3) {
+                    // Probe activated
+                    probe_state = 1;
+                    console.log('Probe activated.');
+                    addPointToPointCloud(tcpWorldPosition, 'initial_registration'); // Collect initial registration point
+
+                    // Collect moving points for registration
+                    // In this updated logic, adding to 'initial_registration' will manage state transitions
+                } else if (probe1 === 1 && probe_state === 1 && probePointsCount < 3) {
+                    // Probe deactivated
+                    probe_state = 0;
+                    console.log('Probe deactivated.');
+                    // Optionally, implement actions on deactivation
+                } else if (probe1 === 0 && registrationState === "collecting_tracing_points") {
+                    // Collect tracing points
+                    addPointToPointCloud(tcpWorldPosition, 'tracing');
+                }
+            } else {
+                console.warn('TCP link not found.');
+            }
+        } else {
+            // console.warn('Robot model is not yet loaded.');
+        }
+    }
+
+
+    /**
+     * Computes and logs the registration error between transformed moving points and fixed points.
+     * @param {Array<Array<number>>} fixed - Fixed points.
+     * @param {Array<Array<number>>} transformedMoving - Transformed moving points.
+     */
+    function computeRegistrationError(fixed, transformedMoving) {
+        let totalError = 0;
+        for (let i = 0; i < fixed.length; i++) {
+            let error = Math.sqrt(
+                Math.pow(fixed[i][0] - transformedMoving[i][0], 2) +
+                Math.pow(fixed[i][1] - transformedMoving[i][1], 2) +
+                Math.pow(fixed[i][2] - transformedMoving[i][2], 2)
+            );
+            console.log(`Point ${i}: Error = ${error.toFixed(4)}`);
+            totalError += error;
+        }
+        let averageError = totalError / fixed.length;
+        console.log(`Average Registration Error: ${averageError.toFixed(4)}`);
+    }
+
+    /**
+     * Visualizes the ray for debugging purposes.
+     * @param {THREE.Vector3} origin - Origin of the ray.
+     * @param {THREE.Vector3} direction - Direction of the ray.
+     */
+    function visualizeRay(origin, direction) {
+        // Remove existing ray visualization
+        if (window.rayLine) {
+            scene.remove(window.rayLine);
+        }
+
+        // Define the length of the ray
+        const rayLength = 0.12; // 12 centimeters
+
+        // Define the end point
+        const endPoint = new THREE.Vector3().addVectors(origin, direction.clone().multiplyScalar(rayLength));
+
+        // Create geometry and material for the ray
+        const geometry = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
+        const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+
+        // Create the line and add to the scene
+        window.rayLine = new THREE.Line(geometry, material);
+        scene.add(window.rayLine);
+    }
+
+    /**
+     * Performs raycasting from the TCP's z-axis and updates ventricles' color based on intersection.
+     */
+    function performRaycasting() {
+        if (!robot) {
+            console.error('Robot model not loaded.');
+            return;
+        }
+
+        // Access the TCP link
+        const evdLink = robot.links['evd_link'];
+        if (!evdLink) {
+            console.error('TCP link not found.');
+            return;
+        }
+
+        // Get TCP's world position
+        const tcpWorldPosition = new THREE.Vector3();
+        evdLink.getWorldPosition(tcpWorldPosition);
+
+        // Get TCP's world quaternion to determine orientation
+        const tcpWorldQuaternion = new THREE.Quaternion();
+        evdLink.getWorldQuaternion(tcpWorldQuaternion);
+
+        // Define the ray direction (TCP's z-axis)
+        let direction = new THREE.Vector3(0, 1, Math.sqrt(3)).applyQuaternion(tcpWorldQuaternion).normalize();
+
+        // Set raycaster origin and direction
+        raycaster.set(tcpWorldPosition, direction);
+
+        // Optional: Visualize the ray (for debugging)
+        visualizeRay(tcpWorldPosition, direction);
+
+        // Check intersection with ventriclesModel
+        let intersects = raycaster.intersectObject(ventriclesModel, true);
+
+        if (intersects.length > 0) {
+            if (!previousIntersection) {
+                // Change ventricles color to green
+                ventriclesModel.traverse(function (child) {
+                    if (child.isMesh && child.material) {
+                        child.material.color.set(0x00ff00); // Green
+                        child.material.needsUpdate = true;
+                    }
+                });
+                console.log('Ray intersects ventricles. Color changed to green.');
+                previousIntersection = true;
+            }
+        } else {
+            if (previousIntersection) {
+                // Change ventricles color back to red
+                ventriclesModel.traverse(function (child) {
+                    if (child.isMesh && child.material) {
+                        child.material.color.set(0xff0000); // Red
+                        child.material.needsUpdate = true;
+                    }
+                });
+                console.log('Ray does not intersect ventricles. Color reverted to red.');
+                previousIntersection = false;
+            }
+        }
+    }
+
+
+    /**
+     * Animation loop.
+     */
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+
+        if (registrationState === "raycasting") {
+            performRaycasting();
+        }
+    }
+
+    /**
+     * Notifies Android about the completion of a registration step.
+     * @param {number} step - Step number (1 for Initial Registration, 2 for Tracing Points Collection).
+     */
+    function notifyAndroidRegistrationStepComplete(step) {
+        if (window.AndroidInterface && typeof window.AndroidInterface.onRegistrationStepComplete === 'function') {
+            window.AndroidInterface.onRegistrationStepComplete(step);
+            console.log(`Notified Android: Registration Step ${step} Complete.`);
+        } else {
+            console.warn('AndroidInterface.onRegistrationStepComplete not available.');
+        }
+    }
+
+    /**
+     * Resets the entire registration process, including point clouds and matrices.
+     */
+    function resetRegistration() {
+        // Reset Initial Registration Points
+        initialRegPointsCount = 0;
+        movingPoints = [];
+        initialRegGeometry.setDrawRange(0, 0);
+        initialRegGeometry.attributes.position.needsUpdate = true;
+        initialRegistrationPointCloud.visible = true;
+
+        // Reset Tracing Points
+        tracingPoints = [];
+
+        // Reset Probe Points
+        probePointsCount = 0;
+        probeGeometry.setDrawRange(0, 0);
+        probeGeometry.attributes.position.needsUpdate = true;
+
+        // Reset Registration Matrix
+        registrationMatrix.identity();
+
+        // Reset Registration State
+        registrationState = "initial_registration";
+        console.log('Registration process has been reset.');
+        alert('Registration has been reset.');
+
+        // Remove visualizations (if any)
+        ['fixedPointsGroup', 'initialRegPointsGroup', 'tracingPointsGroup', 'transformedTracingPointsGroup'].forEach(groupName => {
+            if (window[groupName]) {
+                scene.remove(window[groupName]);
+            }
+        });
+
+        // Reset Progress Bar
+        resetProgressBar();
+
+        // Reset Robot Position
+        if (robot) {
+            robot.position.set(0, 0, 0);
+            robot.rotation.set(0, 0, 0);
+            robot.updateMatrixWorld(true);
+        }
+        scene.remove(robot);
+    }
+
+    /**
+     * Resets the Probe Point Cloud.
+     */
+    function resetProbePointCloud() {
+        probePointsCount = 0;
+        probeGeometry.setDrawRange(0, 0);
+        probeGeometry.attributes.position.needsUpdate = true;
+        console.log('Probe Point Cloud has been reset.');
+        alert('Probe Point Cloud has been reset.');
+
+        // Reset registration
+        resetRegistration();
+    }
+
+    /**
+     * Handles window resize events.
+     */
     function onWindowResize() {
         const container = document.getElementById('model-container');
         camera.aspect = container.clientWidth / container.clientHeight;
@@ -170,22 +1344,10 @@
         renderer.setSize(container.clientWidth, container.clientHeight);
     }
 
-    // Animation loop
-    function animate() {
-        requestAnimationFrame(animate);
-
-        if (controls) {
-            controls.update(); // Required if controls.enableDamping = true
-        } else {
-            console.warn('OrbitControls is undefined.');
-        }
-
-        renderer.render(scene, camera);
-    }
-
-    // Initialize the scene
-    init();
+    /**
+     * Initialize the scene when the page loads.
+     */
+    window.onload = init;
 </script>
-
 </body>
 </html>

@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -15,10 +16,10 @@
         <!-- Header Bar with Exit Button -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="70dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingHorizontal="10dp"
-            android:layout_marginVertical="30dp">
+            android:paddingHorizontal="20dp"
+            android:layout_marginVertical="10dp">
             <View
                 android:layout_width="0dp"
                 android:layout_height="0dp"
@@ -27,7 +28,7 @@
             <TextView
                 android:id="@+id/titleTextView"
                 android:layout_width="match_parent"
-                android:layout_height="113dp"
+                android:layout_height="wrap_content"
                 android:background="@color/black"
                 android:gravity="start"
                 android:paddingStart="20dp"
@@ -48,86 +49,73 @@
             android:orientation="horizontal"
             android:layout_weight="1">
 
-            <!-- Left Side Image Section -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:gravity="center"
                 android:orientation="vertical"
-                android:gravity="top"
-                android:layout_marginBottom="30dp">
-
-                <LinearLayout
+                android:paddingHorizontal="20dp">
+                <!-- Corrected Button Tags -->
+                <Button
+                    android:id="@+id/EVDButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="10dp">
-                    <!-- Corrected Button Tags -->
-                    <Button
-                        android:id="@+id/EVDButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="100dp"
-                        android:clickable="true"
-                        android:scaleType="centerInside"
-                        android:padding="20dp"
-                        android:gravity="left"
-                        android:textAllCaps="false"
-                        android:text="External Ventricular Drain Placement\n\nTreats: High intracranial pressure, lorem ipsum, dolor sit amet" />
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:padding="20dp"
+                    android:gravity="left"
+                    android:textAllCaps="false"
+                    android:text="External Ventricular Drain Placement\n\nTreats: High intracranial pressure, lorem ipsum, dolor sit amet"
+                    android:textSize="20sp" />
 
-                    <Button
-                        android:id="@+id/dialog2"
-                        android:layout_width="match_parent"
-                        android:layout_height="100dp"
-                        android:clickable="true"
-                        android:scaleType="centerInside"
-                        android:padding="20dp"
-                        android:gravity="left"
-                        android:textAllCaps="false"
-                        android:text="Tumor Biopsy (Work in Progress)\n\nUse: acquire tumor tissue for diagnosis, lorem ipsum" />
+                <Button
+                    android:id="@+id/dialog2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:padding="20dp"
+                    android:gravity="left"
+                    android:textAllCaps="false"
+                    android:text="Tumor Biopsy (Work in Progress)\n\nUse: acquire tumor tissue for diagnosis, lorem ipsum"
+                    android:textSize="20sp" />
 
-                    <Button
+                <Button
 
-                        android:layout_width="match_parent"
-                        android:layout_height="100dp"
-                        android:clickable="true"
-                        android:scaleType="centerInside"
-                        android:padding="20dp"
-                        android:gravity="left"
-                        android:textAllCaps="false"
-                        android:text="Corpus Callosotomy (WIP)\n\nTreats: Epilepsy, lorem ipsum, dolor sit amet" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:padding="20dp"
+                    android:gravity="left"
+                    android:textAllCaps="false"
+                    android:text="Corpus Callosotomy (WIP)\n\nTreats: Epilepsy, lorem ipsum, dolor sit amet"
+                    android:textSize="20sp" />
 
-                    <Button
-                        android:layout_width="match_parent"
-                        android:layout_height="100dp"
-                        android:clickable="true"
-                        android:scaleType="centerInside"
-                        android:padding="20dp"
-                        android:gravity="left"
-                        android:textAllCaps="false"
-                        android:text="Stereoelectroencephalography Electrode Placement (WIP)\n\nTreats: Consectetur adipiscing elit, sed do eiusmod, tempor incididunt" />
-                </LinearLayout>
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:padding="20dp"
+                    android:gravity="left"
+                    android:textAllCaps="false"
+                    android:text="Stereoelectroencephalography Electrode Placement (WIP)\n\nTreats: Consectetur adipiscing elit, sed do eiusmod, tempor incididunt"
+                    android:textSize="20sp" />
             </LinearLayout>
         </LinearLayout>
-
-        <!-- Button Section Below Content -->
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp">
-
-            <Button
-                android:id="@+id/noConnection"
-                android:layout_width="200dp"
-                android:layout_height="100dp"
-                android:backgroundTint="@color/black"
-                android:text="Use app without connecting"
-                android:textColor="@color/white"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="50dp"
-                android:layout_marginEnd="1dp" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
     </LinearLayout>
+
+    <Button
+        android:id="@+id/noConnection"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
+        android:backgroundTint="@color/black"
+        android:text="Use app without connecting"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="40dp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
