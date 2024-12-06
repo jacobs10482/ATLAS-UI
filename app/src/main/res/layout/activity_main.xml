@@ -243,7 +243,7 @@
                         android:layout_marginLeft="20dp"
                         android:layout_weight="1"
                         android:text="EXIT OPERATION"
-                        android:textSize="35dp"
+                        android:textSize="32dp"
                         android:visibility="gone"
                         />
                 </LinearLayout>
