@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
 
         NoConnection = findViewById(R.id.noConnection);
         NoConnection.setOnClickListener(v -> {
-            showVideo();
+            setDialog(2);
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -281,12 +281,12 @@ public class MainActivity extends AppCompatActivity {
         registrationErrorValue = findViewById(R.id.registrationErrorValue);
 
         slides = new ArrayList<>();
-        slides.add(new Slide("Table Set Up", "Confirm the surgical table looks as such", R.drawable.table_diagram));
-        slides.add(new Slide("Burr Hole", "Create a Burr hole at Kocher's point using a surgical screw driver. Then attach ATLAS at the Burr hole.", R.drawable.kochers_point_diagram));
-        slides.add(new AtlasSlide("Calibration", "Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue"));
-        slides.add(new AtlasSlide("Fine Tune", "Trace the surface of the patient’s skin for about 15 seconds, ensuring to capture different features of the head."));
-        slides.add(new AtlasSlide("Guide EVD", "Attach the EVD to the effector at 12cm and follow visual guidance to place the drain."));
-        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nIf draining, plug drain and proceed. Otherwise, return to step 6.\n", R.drawable.draining_diagram));
+        slides.add(new Slide("Table Set Up", "Place all necessary equipment on the surgical table, and mount the tablet within view.", R.drawable.table_diagram));
+        slides.add(new Slide("Burr Hole", "Create a burr hole at Kocher's point using the cranial access kit. Then attach ATLAS at the burr hole.", R.drawable.kochers_point_diagram));
+        slides.add(new AtlasSlide("Calibration", "Touch the probe to the green points on the patient’s skin. Once touched, the point will turn blue."));
+        slides.add(new AtlasSlide("Fine Tune", "Trace along the surface of the nose, cheekbones, and head to improve accuracy."));
+        slides.add(new AtlasSlide("Guide EVD", "Attach the EVD to the effector at 12cm and follow visual guidance to place the drain in the ipsilateral ventricle."));
+        slides.add(new Slide("Test Drain", "Remove the stylet and check drainage.\n\nContinue if draining, or return to step 5.\n", R.drawable.draining_diagram));
         slides.add(new Slide("Unmount", "Remove EVD from effector.\n\nUnbolt ATLAS and remove over drain.\n", R.drawable.removal_diagram));
         slides.add(new Slide("Closure", "Attach trocar to end of EVD and tunnel about 6 cm posterior to the burr hole. Staple drain to fixate and connect drainage bag.", R.drawable.cleaning_diagram));
 
@@ -317,7 +317,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         NoConnection.setOnClickListener(v -> {
-            showVideo();
+            setDialog(2);
         });
     }
 
@@ -447,6 +447,26 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }, 1000);
+        } else if (x == 2) {
+            dialog.setContentView(R.layout.unconnected_popup);
+            Button button1 = dialog.findViewById(R.id.dialog_button_1);
+            Button button2 = dialog.findViewById(R.id.dialog_button_2);
+
+            button1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            button2.setOnClickListener(new View.OnClickListener() { // Go to redo calibration
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    showVideo();
+                }
+            });
+
+            dialog.show();
         }
     }
 
