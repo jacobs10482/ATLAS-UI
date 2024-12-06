@@ -33,7 +33,7 @@
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:textSize="40dp"
-                android:text="Unconnected Mode"/>
+                android:text=""/>
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"

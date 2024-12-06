@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView slideCounterTextView;
 
     private Button EVDButton;
+    private Button NoConnection;
     private ImageButton leftButton;
     private ImageButton rightButton;
     private LinearLayout progressBarLayout;
@@ -90,6 +91,13 @@ public class MainActivity extends AppCompatActivity {
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
+            setUnconnectedMode(false);
+        });
+
+        NoConnection = findViewById(R.id.noConnection);
+        NoConnection.setOnClickListener(v -> {
+            EVDSlides();
+            setUnconnectedMode(true);
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -247,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize and set up the VideoView
         VideoView videoView = findViewById(R.id.videoView);
-        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo.mp4);
+        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo);
         videoView.setVideoURI(videoUri);
 
         // Optional: Add media controller for playback controls
@@ -398,7 +406,9 @@ public class MainActivity extends AppCompatActivity {
         registrationErrorValue.setText(String.format("%.2f mm", errorValue));
         if (errorValue > 2) {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
-            setDialog(1);
+            if (!isUnconnectedMode) {
+                setDialog(1);
+            }
         } else if (errorValue < 1) {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
         } else {
