@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log; // Added for logging
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -35,6 +36,7 @@ import org.zeromq.ZMQ;
 
 // Import for JSON quoting
 import org.json.JSONObject;
+import org.zeromq.ZMQException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -70,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private int pointsTouched = 0;
     private int totalPoints = 3;
     private double percentage = 100.0 / totalPoints;
-    private double regErrorMockUp = 2.1;
+    private double regError = 0.0;
 
     // ZeroMQ context and sockets
     private ZContext zmqContext;
@@ -81,6 +83,51 @@ public class MainActivity extends AppCompatActivity {
 
     // App state
     private boolean isUnconnectedMode = false;
+
+    public class WebAppInterface {
+        private static final String TAG = "WebAppInterface";
+        private MainActivity mainActivity;
+
+        WebAppInterface(MainActivity activity) {
+            this.mainActivity = activity;
+        }
+
+        @JavascriptInterface
+        public void handleCallFromJS(String message) {
+            Log.d(TAG, "handleCallFromJS() called from JavaScript with message: " + message);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    handleRight();
+                    Log.d(TAG, "handleRight() invoked from WebView");
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void handleErrorFromJS(String message, String error) {
+            Log.d(TAG, "handleCallFromJS() called from JavaScript with message: " + message);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "Error from JavaScript: " + error);
+                    mainActivity.regError = Double.parseDouble(error) * 1000;
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void handleResetRegistrationJS() {
+            Log.d(TAG, "handleResetRegistrationJS() called from JavaScript");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.currentSlideIndex = 2;
+                    mainActivity.updateSlide();
+                }
+            });
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         zmqContext = new ZContext();
 
         // Server IP and ports
-        String serverIp = "10.0.0.128"; // Replace with your server IP address
+        String serverIp = "192.168.4.10"; // Replace with your server IP address
         int syncPort = 5557; // Port for synchronization (server's PULL socket)
         int pubPort = 5556;  // Port for receiving data (server's PUB socket)
 
@@ -144,16 +191,28 @@ public class MainActivity extends AppCompatActivity {
         zmqThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "ZeroMQ receiving thread started.");
                 while (isZmqRunning && !Thread.currentThread().isInterrupted()) {
-                    // Receive message
-                    String receivedData = zmqSubSocket.recvStr();
-
-                    if (receivedData != null) {
-                        // Pass the data to JavaScript
-                        // Log.d(TAG, "Received data in Android: " + receivedData);
-                        runOnUiThread(() -> passDataToJavaScript(receivedData));
+                    try {
+                        String receivedData = zmqSubSocket.recvStr();
+                        if (receivedData != null) {
+                            Log.d(TAG, "Received data from ZeroMQ: " + receivedData);
+                            // Pass the data to JavaScript
+                            runOnUiThread(() -> passDataToJavaScript(receivedData));
+                        }
+                    } catch (ZMQException e) {
+                        if (zmqContext.isClosed() || !isZmqRunning) {
+                            Log.d(TAG, "ZeroMQ context closed or running flag false, exiting receive loop.");
+                        } else {
+                            Log.e(TAG, "ZeroMQ exception: " + e.getMessage());
+                        }
+                        break; // Exit the loop to prevent further exceptions
+                    } catch (Exception e) {
+                        Log.e(TAG, "Unexpected exception in ZeroMQ thread: " + e.getMessage());
+                        break;
                     }
                 }
+                Log.d(TAG, "ZeroMQ receiving thread terminated.");
             }
         });
         zmqThread.start();
@@ -167,6 +226,7 @@ public class MainActivity extends AppCompatActivity {
         atlas3DView.evaluateJavascript(jsCode, null);
     }
 
+
     private void initializeWebView() {
         atlas3DView.setWebViewClient(new WebViewClient()); // Ensure links open within the WebView
         WebSettings webSettings = atlas3DView.getSettings();
@@ -174,6 +234,9 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccess(true); // Allow access to local files
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
+
+        // Add JavaScript interface
+        atlas3DView.addJavascriptInterface(new WebAppInterface(this), "AndroidInterface");
     }
 
     private void handleLeft() {
@@ -183,8 +246,6 @@ public class MainActivity extends AppCompatActivity {
             resetProgress();
         }
     }
-
-
 
     private void handleRight() {
         if (currentSlideIndex < slides.size() - 1) {
@@ -293,7 +354,23 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     voidOpenMenu();
+                    // Safely close the ZeroMQ resources
+                    isZmqRunning = false;
+                    if (zmqThread != null) {
+                        Log.d(TAG, "Interrupting ZeroMQ thread");
+                        zmqThread.interrupt();
+                    }
+                    if (zmqPushSocket != null) {
+                        Log.d(TAG, "Closing ZeroMQ PUSH socket");
+                        zmqPushSocket.close();
+                    }
+                    if (zmqSubSocket != null) {
+                        Log.d(TAG, "Closing ZeroMQ SUB socket");
+                        zmqSubSocket.close();
+                    }
 
+
+                    // Return to procedure selection screen
                     currentSlideIndex = 0;
                     updateSlide();
                     resetProgress();
@@ -343,6 +420,10 @@ public class MainActivity extends AppCompatActivity {
                     } else {
 
                         if (dialog.isShowing()) {
+                            currentSlideIndex = 2;
+                            updateSlide();
+                            atlas3DView.evaluateJavascript("resetRegistration();", null);
+                            Log.d(TAG, "Resetting registration");
                             dialog.dismiss();
                         }
                     }
@@ -362,17 +443,14 @@ public class MainActivity extends AppCompatActivity {
             if (currentStep == 5) {
                 imageView.setVisibility(View.GONE);
                 atlas3DView.setVisibility(View.VISIBLE);
-                progressBarLayout.setVisibility(View.GONE);
-                registrationErrorLayout.setVisibility(View.VISIBLE);
-                updateRegistrationError(regErrorMockUp);
-                regErrorMockUp = 0.25;  // change the value to switch to different colors
+                updateRegistrationError(regError);
 
             } else {
                 // Show WebView and hide ImageView
                 imageView.setVisibility(View.GONE);
                 atlas3DView.setVisibility(View.VISIBLE);
-                progressBarLayout.setVisibility(View.VISIBLE);
-                registrationErrorLayout.setVisibility(View.GONE);
+                //progressBarLayout.setVisibility(View.VISIBLE);
+                //registrationErrorLayout.setVisibility(View.GONE);
                 progressBar.setOnClickListener(v -> handlePointTouch());
             }
         } else {
@@ -430,7 +508,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateRegistrationError(double errorValue) {
         registrationErrorValue.setText(String.format("%.2f mm", errorValue));
-        if (errorValue > 2) {
+        if (errorValue > 5) {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
             if (!isUnconnectedMode) {
                 setDialog(1);

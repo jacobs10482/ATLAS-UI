@@ -97,6 +97,24 @@
             color: #333;
             font-weight: bold;
         }
+
+        /* Registration Error Box */
+        #error-box {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            z-index: 1000;
+            transition: background-color 0.3s ease;
+        }
+
+
     </style>
 </head>
 <body>
@@ -110,7 +128,12 @@
 </div>
 
 <!-- Control Buttons -->
-<button id="reset-button" class="control-button">Reset Probe Point Cloud</button>
+<button id="reset-button" class="control-button">Reset Registration</button>
+
+<!-- Registration Error Box -->
+<div id="error-box" style="display: none;">
+    <div id="error-text">Registration Error: --</div>
+</div>
 
 <!-- Progress Bar -->
 <div id="progress-container">
@@ -141,8 +164,8 @@
     let robot; // URDF robot model
     let probePointCloud, probeGeometry, probeMaterial;
     let phantomPointCloud, phantomGeometry, phantomMaterial;
-    let redPointCloud, redGeometry, redMaterial;
-    let initialRegistrationPointCloud, initialRegGeometry, initialRegMaterial; // New: Initial Registration Point Cloud
+    let fixedPointGroup, fixedGeometry, fixedMaterial;
+    let initialRegistrationPointCloud, initialRegGeometry, initialRegMaterial; // Initial Registration Point Cloud
 
     const PROBE_MAX_POINTS = 2000;
     const PHANTOM_MAX_POINTS = 500000;
@@ -163,7 +186,7 @@
     let lastFrameTime = new Date(0);
 
     // Registration Variables
-    let fixedPoints = []; // Fixed points (red points)
+    let fixedPoints = []; // Fixed points (nose tip, nasion, left brow ridge)
     let movingPoints = []; // Moving points (probe stage 1 points)
     let tracingPoints = [];
     const TRACING_MAX_POINTS = 2000;
@@ -185,10 +208,10 @@
 
     // Raycasting Variables
     let raycaster = new THREE.Raycaster();
-    let rayDirection = new THREE.Vector3(0, 0, 1); // Initial direction along z-axis
+    let rayDirection = new THREE.Vector3(0, 1, Math.sqrt(3)); // Initial direction along z-axis
     let previousIntersection = false; // To track color changes and avoid redundant updates
 
-
+    // Registration Matrix
     let registrationMatrix = new THREE.Matrix4(); // Transformation matrix
 
     // Registration States
@@ -196,9 +219,13 @@
 
     // Counters
     let initialRegPointsCount = 0; // Tracks initial registration points
+    let currentFixedPointIndex = 0; // Tracks current fixed point to collect
 
     // Probe State Flag (0: inactive, 1: active)
     let probe_state = 0;
+
+    // Fixed Points Coloring
+    let fixedColors; // Float32Array to store colors for each fixed point
 
     /**
      * Initializes the 3D scene.
@@ -211,8 +238,9 @@
         scene.background = new THREE.Color(0xcccccc);
 
         // Camera
-        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 0.1, 0.6);
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.01, 1000);
+        camera.position.set(-0.1, 0.05, 0.2);
+
 
         // Renderer
         renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -243,6 +271,18 @@
         controls.maxDistance = 2;
         controls.maxPolarAngle = Math.PI;
 
+        // **Add Vertical Movement Here**
+        const verticalOffset = 0.05; // Adjust this value as needed (positive for upward, negative for downward)
+
+        // Move the camera vertically
+        camera.position.y += verticalOffset;
+
+        // Move the controls target vertically by the same amount
+        controls.target.y += verticalOffset;
+
+        // Update the controls to reflect the changes
+        controls.update();
+
         // Initialize Point Clouds
         initPointClouds();
 
@@ -265,6 +305,8 @@
 
         // Initialize Progress Bar
         resetProgressBar();
+        const originAxesHelper = new THREE.AxesHelper(0.02);
+        scene.add(originAxesHelper);
     }
 
     /**
@@ -281,7 +323,7 @@
         console.log('Probe point cloud initialized.');
 
         // Phantom Point Cloud (Green)
-        const phantomPositions = new Float32Array(PHANTOM_MAX_POINTS);
+        const phantomPositions = new Float32Array(PHANTOM_MAX_POINTS * 3);
         phantomGeometry = new THREE.BufferGeometry();
         phantomGeometry.setAttribute('position', new THREE.BufferAttribute(phantomPositions, 3));
         phantomMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.005 });
@@ -291,19 +333,32 @@
 
         // Red Point Cloud (Fixed Points)
         const redPositions = new Float32Array(3 * 3); // 3 points
-        // Example fixed points (adjust as needed)
+        // Define fixed points: nose tip, nasion, left brow ridge
         redPositions.set([0.036, 0.025, 0.11], 0); // Nose tip
         redPositions.set([0.036, 0.055, 0.088], 3); // Nasion
         redPositions.set([0.065, 0.07, 0.086], 6); // Left brow ridge
 
-        redGeometry = new THREE.BufferGeometry();
-        redGeometry.setAttribute('position', new THREE.BufferAttribute(redPositions, 3));
-        redMaterial = new THREE.PointsMaterial({ color: 0xff0000, size: 0.01 });
-        redPointCloud = new THREE.Points(redGeometry, redMaterial);
-        scene.add(redPointCloud);
-        console.log('Red point cloud (fixed points) initialized.');
+        fixedGeometry = new THREE.BufferGeometry();
+        fixedGeometry.setAttribute('position', new THREE.BufferAttribute(redPositions, 3));
 
-        // Populate fixedPoints array
+        // Initialize color array: first point green, others red
+        fixedColors = new Float32Array(3 * 3); // RGB for each point
+        // Nose tip - Green
+        fixedColors.set([0x00, 0xff, 0x00], 0); // Green
+        // Nasion - Red
+        fixedColors.set([0xff, 0x00, 0x00], 3); // Red
+        // Left Brow Ridge - Red
+        fixedColors.set([0xff, 0x00, 0x00], 6); // Red
+
+        fixedGeometry.setAttribute('color', new THREE.BufferAttribute(fixedColors, 3));
+
+        // Enable vertex colors in the material
+        fixedMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 0.01 });
+        fixedPointGroup = new THREE.Points(fixedGeometry, fixedMaterial);
+        scene.add(fixedPointGroup);
+        console.log('Fixed point cloud (fixedPointsGroup) initialized with per-point colors.');
+
+        // Populate fixedPoints array for registration
         for (let i = 0; i < 3; i++) {
             const x = redPositions[i * 3];
             const y = redPositions[i * 3 + 1];
@@ -312,7 +367,7 @@
         }
         console.log('Fixed points stored for registration.');
 
-        // **New: Initial Registration Point Cloud (Yellow)**
+        // **Initial Registration Point Cloud (Yellow)**
         const initialRegPositions = new Float32Array(3 * 3); // 3 points
         initialRegGeometry = new THREE.BufferGeometry();
         initialRegGeometry.setAttribute('position', new THREE.BufferAttribute(initialRegPositions, 3));
@@ -381,7 +436,7 @@
                     if (child.isMesh) {
                         child.material = child.material.clone();
                         child.material.transparent = true;
-                        child.material.opacity = 0.6;
+                        child.material.opacity = 0.25;
                         child.material.depthWrite = false;
                         child.material.blending = THREE.NormalBlending;
                     }
@@ -495,34 +550,45 @@
      */
     function addPointToPointCloud(position, type) {
         if (type === 'initial_registration') {
-            if (initialRegPointsCount >= 3) {
-                console.warn('Initial Registration Point Cloud has already collected 3 points.');
+            if (currentFixedPointIndex >= 3) {
+                console.warn('Initial Registration Point Cloud has already collected all 3 points.');
                 return;
             }
-            initialRegGeometry.attributes.position.setXYZ(initialRegPointsCount, position.x, position.y, position.z);
-            initialRegPointsCount++;
-            initialRegGeometry.setDrawRange(0, initialRegPointsCount);
-            initialRegGeometry.attributes.position.needsUpdate = true;
-            console.log(`Initial Registration Point ${initialRegPointsCount} added: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
+
+            // Change the current fixed point's color to blue
+            fixedColors.set([0x00, 0x00, 0xff], currentFixedPointIndex * 3); // Blue
+            fixedPointGroup.geometry.attributes.color.needsUpdate = true;
+            console.log(`Fixed Point ${currentFixedPointIndex + 1} color changed to blue.`);
+
+            // Increment the fixed point index
+            currentFixedPointIndex++;
+
+            // If there are more fixed points to collect, highlight the next one in green
+            if (currentFixedPointIndex < 3) {
+                fixedColors.set([0x00, 0xff, 0x00], currentFixedPointIndex * 3); // Green
+                fixedPointGroup.geometry.attributes.color.needsUpdate = true;
+                console.log(`Fixed Point ${currentFixedPointIndex + 1} is now highlighted in green.`);
+            }
+
+            // Add the collected point to movingPoints
+            movingPoints.push([position.x, position.y, position.z]);
+            console.log(`Moving Point ${movingPoints.length} added: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
 
             // Update Progress Bar for Initial Registration
-            updateProgressBar('initial_registration', (initialRegPointsCount / 3) * 100);
-            if (initialRegPointsCount === 3) {
+            updateProgressBar('initial_registration', (currentFixedPointIndex / 3) * 100);
+            if (currentFixedPointIndex === 3) {
                 // Initial Registration Complete
                 updateProgressBar('initial_registration', 100);
-                // Populate movingPoints array
-                for (let i = 0; i < 3; i++) {
-                    const x = initialRegistrationPointCloud.geometry.attributes.position.array[i * 3];
-                    const y = initialRegistrationPointCloud.geometry.attributes.position.array[i * 3 + 1];
-                    const z = initialRegistrationPointCloud.geometry.attributes.position.array[i * 3 + 2];
-                    movingPoints.push([x, y, z]);
-                }
+                console.log('Initial Point Cloud Collection Complete.');
 
+                // Notify Android that Initial Registration is complete
                 notifyAndroidRegistrationStepComplete(1);
-                performRegistration();
+
+                // Proceed to ICP Registration after a brief delay
                 setTimeout(() => {
+                    performRegistration();
                     switchToTracingMode();
-                }, 1000); // wait 1 second before switching to tracing mode
+                }, 1000); // 1-second delay
             }
         } else if (type === 'tracing') {
             if (tracingPoints.length >= TRACING_MAX_POINTS) {
@@ -530,7 +596,7 @@
                 return;
             }
             tracingPoints.push([position.x, position.y, position.z]);
-            console.log(`Tracing Point ${tracingPoints.length} added: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
+            // console.log(`Tracing Point ${tracingPoints.length} added: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
 
             probePointCloud.geometry.attributes.position.setXYZ(tracingPoints.length, position.x, position.y, position.z);
             probePointCloud.geometry.setDrawRange(0, tracingPoints.length + 1);
@@ -540,9 +606,10 @@
             updateProgressBar('tracing', (tracingPoints.length / TRACING_MAX_POINTS) * 100);
             if (tracingPoints.length === TRACING_MAX_POINTS) {
                 // Tracing Points Collection Complete
-                updateProgressBar('tracing', 100);
-                notifyAndroidRegistrationStepComplete(2);
-                performICPRegistration();
+                updateProgressBar('icp', 100);
+                setTimeout(() => {
+                    performICPRegistration();
+                }, 100); // 0.1-second delay
             }
         }
     }
@@ -575,8 +642,8 @@
             progressFill.style.width = `${progress}%`;
             progressText.textContent = `Tracing Points Collection: ${Math.min(progress, 100).toFixed(1)}%`;
         } else if (step === 'icp') {
-            progressFill.style.width = `${progress}%`;
-            progressText.textContent = `ICP Registration: ${Math.min(progress, 100).toFixed(1)}%`;
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Performing Registration...';
         }
     }
 
@@ -615,7 +682,6 @@
 
         // Update registration matrix
         registrationMatrix.copy(initialTransformation);
-        console.log('Updated Registration Matrix:', registrationMatrix);
 
         // Apply transformation to robot
         updateRobotOrigin(registrationMatrix);
@@ -746,21 +812,42 @@
         registrationState = "raycasting";
         console.log('Transitioned to Raycasting State.');
 
-        visualizePoints(registrationMatrix);
+        // visualizePoints(registrationMatrix);
 
         // Compute registration error
         let transformedMoving = transformedTracingPoints.map(point => {
             let transformedVector = new THREE.Vector3(point[0], point[1], point[2]).applyMatrix4(registrationMatrix);
             return [transformedVector.x, transformedVector.y, transformedVector.z];
         });
-        computeRegistrationError(fixedCorresponding, transformedMoving); // Adjust based on data source
+        let averageError = computeRegistrationError(fixedCorresponding, transformedMoving); // Adjust based on data source
+
+        // Remove the progress bar
+        const progressContainer = document.getElementById('progress-container');
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+        }
+
+        // Show and update the error box
+        const errorBox = document.getElementById('error-box');
+        const errorText = document.getElementById('error-text');
+        if (errorBox && errorText) {
+            errorBox.style.display = 'block';
+            errorText.textContent = `Registration Error: ${(averageError * 1000).toFixed(2)} mm`;
+            sendRegistrationErrorToAndroid(averageError);
+
+            // Set background color based on error value
+            if (averageError < 0.003) {
+                errorBox.style.backgroundColor = 'rgba(64, 255, 64, 0.8)'; // Green
+            } else if (averageError >= 0.003 && averageError <= 0.005) {
+                errorBox.style.backgroundColor = 'rgba(255, 255, 64, 0.8)'; // Yellow
+            } else {
+                errorBox.style.backgroundColor = 'rgba(255, 64, 64, 0.8)'; // Red
+            }
+        }
 
         // **Notify Android that ICP is complete and Raycasting is starting**
-        notifyAndroidRegistrationStepComplete(3); // Assuming step 3 is Raycasting
+        notifyAndroidRegistrationStepComplete(2);
     }
-
-
-
 
     /**
      * Extracts [x, y, z] positions from a THREE.Points object.
@@ -805,8 +892,6 @@
      * @returns {THREE.Matrix4|null} - Transformation matrix aligning movingPoints to fixedPoints, or null if an error occurs.
      */
     function computeArunRegistration(fixedPoints, movingPoints) {
-        console.log('FixedPoints in performReg:', fixedPoints);
-        console.log('MovingPoints in performReg:', movingPoints);
 
         const numPoints = fixedPoints.length;
 
@@ -828,26 +913,16 @@
             let fixed = fixedPoints.map(point => [point[0], point[1], point[2]]);
             let moving = movingPoints.map(point => [point[0], point[1], point[2]]);
 
-            console.log('Fixed Matrix:', fixed);
-            console.log('Moving Matrix:', moving);
-
             // Calculate centroids
             let fixedCentroid = computeCentroid(fixed);
             let movingCentroid = computeCentroid(moving);
-
-            console.log('Fixed Centroid:', fixedCentroid);
-            console.log('Moving Centroid:', movingCentroid);
 
             // Center the points by subtracting centroids
             let q1 = centerPoints(fixed, fixedCentroid); // (Nx3)
             let q2 = centerPoints(moving, movingCentroid); // (Nx3)
 
-            console.log('Q1 Matrix (Fixed - Centroid):', q1);
-            console.log('Q2 Matrix (Moving - Centroid):', q2);
-
             // Compute covariance matrix H = q1^T * q2
             let H = numeric.dot(numeric.transpose(q1), q2); // (3x3)
-            console.log('Covariance Matrix H:', H);
 
             // Perform SVD on H
             let svdResult = numeric.svd(H);
@@ -855,35 +930,37 @@
             let S = svdResult.S;
             let V = svdResult.V;
 
-            console.log('SVD Results - U Matrix:', U);
-            console.log('SVD Results - S Vector:', S);
-            console.log('SVD Results - V Matrix:', V);
-
             // Compute rotation matrix R = V * U^T
             let UT = numeric.transpose(U);
             let R = numeric.dot(V, UT);
-            console.log('Initial Rotation Matrix R:', R);
 
             // Compute determinant of R
             let detR = numeric.det(R);
-            console.log('Determinant of R:', detR);
 
             // Correct reflection if necessary
             if (detR < 0) {
                 console.warn("Reflection detected. Correcting for proper rotation.");
-                // Flip the sign of the third column of V to ensure a right-handed coordinate system
-                V[2] = numeric.neg(V[2]);
+                // Negate the third column of V
+                for (let i = 0; i < V.length; i++) {
+                    V[i][2] = -V[i][2];
+                }
+                // Recompute the rotation matrix R = V * Uᵀ
                 R = numeric.dot(V, numeric.transpose(U));
+                // Recompute the determinant to confirm correction
                 detR = numeric.det(R);
-                console.log('Corrected Rotation Matrix R:', R);
-                console.log('Determinant of corrected R:', detR);
+
+                if (detR < 0) {
+                    console.error("Reflection correction failed. Determinant is still negative.");
+                } else {
+                    console.log("Reflection corrected. Determinant of R:", detR);
+                }
             }
+
 
             // Compute translation vector T = movingCentroid - R * fixedCentroid
             // Perform matrix multiplication R * fixedCentroid
             let R_fixedCentroid = numeric.dot(R, fixedCentroid); // [x, y, z]
             let T = numeric.sub(movingCentroid, R_fixedCentroid); // [x, y, z]
-            console.log('Translation Vector T:', T);
 
             // Create transformation matrix (4x4)
             let transformationMatrixNumeric = [
@@ -892,7 +969,6 @@
                 [R[2][0], R[2][1], R[2][2], T[2]],
                 [0,       0,       0,       1]
             ];
-            console.log('Transformation Matrix:', transformationMatrixNumeric);
 
             // Flatten the matrix in column-major order for Three.js
             let flatMatrix = [
@@ -911,11 +987,8 @@
             // If you need to invert the transformation, uncomment the following line:
             transformationMatrix = transformationMatrix.invert();
 
-            console.log('Registration transformation matrix (Three.js Matrix4):', transformationMatrix.toArray());
-
             // Update the global registrationMatrix if needed
             registrationMatrix.copy(transformationMatrix);
-            console.log('Global Registration Matrix updated.');
 
             return transformationMatrix;
 
@@ -962,22 +1035,13 @@
      */
     function visualizePoints(transformationMatrix) {
         // Remove existing visualizations
-        ['fixedPointsGroup', 'initialRegPointsGroup', 'tracingPointsGroup', 'transformedTracingPointsGroup'].forEach(groupName => {
+        ['initialRegPointsGroup', 'tracingPointsGroup', 'transformedTracingPointsGroup'].forEach(groupName => {
             if (window[groupName]) {
                 scene.remove(window[groupName]);
             }
         });
 
-        // Fixed Points (Red)
-        let fixedGeometry = new THREE.BufferGeometry();
-        let fixedPositions = [];
-        fixedPoints.forEach(point => {
-            fixedPositions.push(point[0], point[1], point[2]);
-        });
-        fixedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(fixedPositions, 3));
-        let fixedMaterial = new THREE.PointsMaterial({ color: 0xff0000, size: 0.01 });
-        window.fixedPointsGroup = new THREE.Points(fixedGeometry, fixedMaterial);
-        scene.add(window.fixedPointsGroup);
+        // Fixed Points are already handled with per-point colors in fixedPointGroup
 
         // Initial Registration Points (Yellow)
         let initialRegGeometryVis = new THREE.BufferGeometry();
@@ -1112,7 +1176,7 @@
                 // console.log('TCP World Position:', tcpWorldPosition);
 
                 // Handle probe1 activation/deactivation
-                if (probe1 === 0 && probe_state === 0 &&  probePointsCount < 3) {
+                if (probe1 === 0 && probe_state === 0 &&  initialRegPointsCount < 3) {
                     // Probe activated
                     probe_state = 1;
                     console.log('Probe activated.');
@@ -1120,7 +1184,7 @@
 
                     // Collect moving points for registration
                     // In this updated logic, adding to 'initial_registration' will manage state transitions
-                } else if (probe1 === 1 && probe_state === 1 && probePointsCount < 3) {
+                } else if (probe1 === 1 && probe_state === 1 && initialRegPointsCount < 3) {
                     // Probe deactivated
                     probe_state = 0;
                     console.log('Probe deactivated.');
@@ -1151,37 +1215,12 @@
                 Math.pow(fixed[i][1] - transformedMoving[i][1], 2) +
                 Math.pow(fixed[i][2] - transformedMoving[i][2], 2)
             );
-            console.log(`Point ${i}: Error = ${error.toFixed(4)}`);
+            // console.log(`Point ${i + 1}: Error = ${error.toFixed(4)} meters`);
             totalError += error;
         }
         let averageError = totalError / fixed.length;
-        console.log(`Average Registration Error: ${averageError.toFixed(4)}`);
-    }
-
-    /**
-     * Visualizes the ray for debugging purposes.
-     * @param {THREE.Vector3} origin - Origin of the ray.
-     * @param {THREE.Vector3} direction - Direction of the ray.
-     */
-    function visualizeRay(origin, direction) {
-        // Remove existing ray visualization
-        if (window.rayLine) {
-            scene.remove(window.rayLine);
-        }
-
-        // Define the length of the ray
-        const rayLength = 0.12; // 12 centimeters
-
-        // Define the end point
-        const endPoint = new THREE.Vector3().addVectors(origin, direction.clone().multiplyScalar(rayLength));
-
-        // Create geometry and material for the ray
-        const geometry = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
-        const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-
-        // Create the line and add to the scene
-        window.rayLine = new THREE.Line(geometry, material);
-        scene.add(window.rayLine);
+        console.log(`Average Registration Error: ${averageError.toFixed(4)} meters`);
+        return averageError;
     }
 
     /**
@@ -1193,29 +1232,29 @@
             return;
         }
 
-        // Access the TCP link
+        // Access the EVD link
         const evdLink = robot.links['evd_link'];
         if (!evdLink) {
-            console.error('TCP link not found.');
+            console.error('EVD link not found.');
             return;
         }
 
-        // Get TCP's world position
-        const tcpWorldPosition = new THREE.Vector3();
-        evdLink.getWorldPosition(tcpWorldPosition);
+        // Get EVD's world position
+        const evdWorldPosition = new THREE.Vector3();
+        evdLink.getWorldPosition(evdWorldPosition);
 
-        // Get TCP's world quaternion to determine orientation
-        const tcpWorldQuaternion = new THREE.Quaternion();
-        evdLink.getWorldQuaternion(tcpWorldQuaternion);
+        // Get EVD's world quaternion to determine orientation
+        const evdWorldQuaternion = new THREE.Quaternion();
+        evdLink.getWorldQuaternion(evdWorldQuaternion);
 
-        // Define the ray direction (TCP's z-axis)
-        let direction = new THREE.Vector3(0, 1, Math.sqrt(3)).applyQuaternion(tcpWorldQuaternion).normalize();
+        // Define the ray direction (EVD's z-axis)
+        let direction = new THREE.Vector3(0, 1, Math.sqrt(3)).applyQuaternion(evdWorldQuaternion).normalize();
 
         // Set raycaster origin and direction
-        raycaster.set(tcpWorldPosition, direction);
+        raycaster.set(evdWorldPosition, direction);
 
         // Optional: Visualize the ray (for debugging)
-        visualizeRay(tcpWorldPosition, direction);
+        visualizeRay(evdWorldPosition, direction);
 
         // Check intersection with ventriclesModel
         let intersects = raycaster.intersectObject(ventriclesModel, true);
@@ -1247,6 +1286,31 @@
         }
     }
 
+    /**
+     * Visualizes the ray for debugging purposes.
+     * @param {THREE.Vector3} origin - Origin of the ray.
+     * @param {THREE.Vector3} direction - Direction of the ray.
+     */
+    function visualizeRay(origin, direction) {
+        // Remove existing ray visualization
+        if (window.rayLine) {
+            scene.remove(window.rayLine);
+        }
+
+        // Define the length of the ray
+        const rayLength = 0.12; // 12 centimeters
+
+        // Define the end point
+        const endPoint = new THREE.Vector3().addVectors(origin, direction.clone().multiplyScalar(rayLength));
+
+        // Create geometry and material for the ray
+        const geometry = new THREE.BufferGeometry().setFromPoints([origin, endPoint]);
+        const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+
+        // Create the line and add to the scene
+        window.rayLine = new THREE.Line(geometry, material);
+        scene.add(window.rayLine);
+    }
 
     /**
      * Animation loop.
@@ -1263,14 +1327,40 @@
 
     /**
      * Notifies Android about the completion of a registration step.
-     * @param {number} step - Step number (1 for Initial Registration, 2 for Tracing Points Collection).
+     * @param {number} step - Step number (1 for Initial Registration, 2 for Tracing Points Collection, 3 for Raycasting).
      */
     function notifyAndroidRegistrationStepComplete(step) {
-        if (window.AndroidInterface && typeof window.AndroidInterface.onRegistrationStepComplete === 'function') {
-            window.AndroidInterface.onRegistrationStepComplete(step);
+        if (window.AndroidInterface && typeof window.AndroidInterface.handleCallFromJS === 'function') {
+            window.AndroidInterface.handleCallFromJS("Registration Step " + step + " Complete.");
             console.log(`Notified Android: Registration Step ${step} Complete.`);
         } else {
-            console.warn('AndroidInterface.onRegistrationStepComplete not available.');
+            console.warn('AndroidInterface.updateSlide not available.');
+        }
+    }
+
+    /**
+     * Sends the registration error to Android for display.
+     * @param {number} error - The registration error in meters.
+     */
+    function sendRegistrationErrorToAndroid(error) {
+        if (window.AndroidInterface && typeof window.AndroidInterface.handleErrorFromJS === 'function') {
+            window.AndroidInterface.handleErrorFromJS("Registration Error: " + (error * 1000).toFixed(2) + " mm", error);
+            console.log('Sent Registration Error to Android:', (error * 1000).toFixed(2) + ' mm');
+        } else {
+            console.warn('AndroidInterface.handleErrorFromJS not available.');
+        }
+    }
+
+    /**
+     * Sends the registration error to Android for display.
+     * @param {number} error - The registration error in meters.
+     */
+    function sendRegistrationResetToAndroid() {
+        if (window.AndroidInterface && typeof window.AndroidInterface.handleResetRegistrationJS === 'function') {
+            window.AndroidInterface.handleResetRegistrationJS();
+            console.log('Sent Registration Reset to Android');
+        } else {
+            console.warn('AndroidInterface.handleResetRegistrationJS not available.');
         }
     }
 
@@ -1278,6 +1368,34 @@
      * Resets the entire registration process, including point clouds and matrices.
      */
     function resetRegistration() {
+        // Android handler
+        sendRegistrationResetToAndroid();
+
+        // Add back the progress bar
+        const progressContainer = document.getElementById('progress-container');
+        if (progressContainer) {
+            progressContainer.style.display = 'flex';
+        }
+
+        // Remove error box
+        const errorBox = document.getElementById('error-box');
+        if (errorBox) {
+            errorBox.style.display = 'none';
+        }
+
+        // Reset Raycaster if needed
+        if (window.rayLine) {
+            scene.remove(window.rayLine);
+            ventriclesModel.traverse(function (child) {
+                if (child.isMesh && child.material) {
+                    child.material.color.set(0xff0000); // Red
+                    child.material.needsUpdate = true;
+                }
+            });
+        }
+        raycaster = new THREE.Raycaster();
+        previousIntersection = false; // To track color changes and avoid redundant updates
+
         // Reset Initial Registration Points
         initialRegPointsCount = 0;
         movingPoints = [];
@@ -1302,7 +1420,7 @@
         alert('Registration has been reset.');
 
         // Remove visualizations (if any)
-        ['fixedPointsGroup', 'initialRegPointsGroup', 'tracingPointsGroup', 'transformedTracingPointsGroup'].forEach(groupName => {
+        ['initialRegPointsGroup', 'tracingPointsGroup', 'transformedTracingPointsGroup'].forEach(groupName => {
             if (window[groupName]) {
                 scene.remove(window[groupName]);
             }
@@ -1318,6 +1436,23 @@
             robot.updateMatrixWorld(true);
         }
         scene.remove(robot);
+
+        // Reset Fixed Points Coloring and Visibility
+        if (fixedPointGroup) {
+            // Reset all fixed points to red
+            for (let i = 0; i < 3; i++) {
+                fixedColors.set([0xff, 0x00, 0x00], i * 3); // Red
+            }
+            // Highlight the first fixed point in green
+            fixedColors.set([0x00, 0xff, 0x00], 0); // Green
+            fixedPointGroup.geometry.attributes.color.needsUpdate = true;
+
+            // Reset the fixed point index
+            currentFixedPointIndex = 0;
+
+            // Add the fixed points back to the scene
+            scene.add(fixedPointGroup);
+        }
     }
 
     /**
