@@ -364,6 +364,8 @@ public class MainActivity extends AppCompatActivity {
 
         videoView.setVideoURI(videoUri);
 
+        videoView.setZOrderOnTop(true);
+
         videoView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
