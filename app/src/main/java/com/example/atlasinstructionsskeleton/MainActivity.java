@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private Button NoConnection;
     private ImageButton leftButton;
     private ImageButton rightButton;
+    private Button finishProcedureButton;
     private LinearLayout progressBarLayout;
     private ProgressBar progressBar;
     private TextView progressPercentage;
@@ -270,6 +271,7 @@ public class MainActivity extends AppCompatActivity {
         slideCounterTextView = findViewById(R.id.slideCounterTextView);
         leftButton = findViewById(R.id.leftButton);
         rightButton = findViewById(R.id.rightButton);
+        finishProcedureButton = findViewById(R.id.finishProcedureButton);
         progressBarLayout = findViewById(R.id.progressBarlayout);
         progressBar = findViewById(R.id.progressBar);
         progressPercentage = findViewById(R.id.progressPercentage);
@@ -293,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
         rightButton.setOnClickListener(v -> handleRight());
 
         exitButton.setOnClickListener(v -> setDialog(0));
+        finishProcedureButton.setOnClickListener(v -> setDialog(0));
 
         // Initialize WebView settings
         initializeWebView();
@@ -505,12 +508,19 @@ public class MainActivity extends AppCompatActivity {
             if (currentStep == 1) {
                 leftButton.setVisibility(View.INVISIBLE);
                 rightButton.setVisibility(View.VISIBLE);
+                slideCounterTextView.setVisibility(View.VISIBLE);
+                finishProcedureButton.setVisibility(View.GONE);
             } else if (currentStep == 8) {
                 leftButton.setVisibility(View.VISIBLE);
-                rightButton.setVisibility(View.INVISIBLE);
+                rightButton.setVisibility(View.GONE);
+                slideCounterTextView.setVisibility(View.GONE);
+                finishProcedureButton.setVisibility(View.VISIBLE);
             } else {
                 leftButton.setVisibility(View.VISIBLE);
                 rightButton.setVisibility(View.VISIBLE);
+                slideCounterTextView.setVisibility(View.VISIBLE);
+                finishProcedureButton.setVisibility(View.GONE);
+                finishProcedureButton.setVisibility(View.GONE);
             }
 
             // Show ImageView and hide WebView
