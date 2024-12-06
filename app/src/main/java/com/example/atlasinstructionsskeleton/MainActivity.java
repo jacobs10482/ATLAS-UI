@@ -27,6 +27,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // Import ZeroMQ classes
 import org.zeromq.ZContext;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView slideCounterTextView;
 
     private Button EVDButton;
+    private Button NoConnection;
     private ImageButton leftButton;
     private ImageButton rightButton;
     private LinearLayout progressBarLayout;
@@ -90,6 +92,13 @@ public class MainActivity extends AppCompatActivity {
 
         EVDButton.setOnClickListener(v -> {
             EVDSlides();
+            setUnconnectedMode(false);
+        });
+
+        NoConnection = findViewById(R.id.noConnection);
+        NoConnection.setOnClickListener(v -> {
+            EVDSlides();
+            setUnconnectedMode(true);
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -247,8 +256,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize and set up the VideoView
         VideoView videoView = findViewById(R.id.videoView);
-        // Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo);
-        videoView.setVideoURI(Uri.parse("res/raw/atlas_demo"));
+        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo);
+        videoView.setVideoURI(videoUri);
 
         // Optional: Add media controller for playback controls
         MediaController mediaController = new MediaController(this);
@@ -314,6 +323,31 @@ public class MainActivity extends AppCompatActivity {
             });
 
             dialog.show();
+
+
+            final int countdownTime = 10;
+            final AtomicInteger remainingTime = new AtomicInteger(countdownTime);
+
+
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+
+                    button2.setText(String.format("Redo (%d seconds)", remainingTime.get()));
+
+
+                    if (remainingTime.get() > 0) {
+                        remainingTime.decrementAndGet();
+
+                        new Handler(Looper.getMainLooper()).postDelayed(this, 1000);
+                    } else {
+
+                        if (dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
+                    }
+                }
+            }, 1000);
         }
     }
 
@@ -398,7 +432,9 @@ public class MainActivity extends AppCompatActivity {
         registrationErrorValue.setText(String.format("%.2f mm", errorValue));
         if (errorValue > 2) {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_red);
-            setDialog(1);
+            if (!isUnconnectedMode) {
+                setDialog(1);
+            }
         } else if (errorValue < 1) {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
         } else {

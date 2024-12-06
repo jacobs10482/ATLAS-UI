@@ -108,13 +108,14 @@
 
     <Button
         android:id="@+id/noConnection"
-        android:layout_width="200dp"
+        android:layout_width="wrap_content"
         android:layout_height="100dp"
         android:backgroundTint="@color/black"
-        android:text="Use app without connecting"
+        android:text="Enter Unconnected Mode for EVD Placement"
         android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:padding="10dp"
         android:layout_marginRight="20dp"
         android:layout_marginBottom="40dp" />
 
