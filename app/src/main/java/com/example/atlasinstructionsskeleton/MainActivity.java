@@ -331,6 +331,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void voidOpenMenu() {
         setContentView(R.layout.pick_procedure_main);
+        isUnconnectedMode = false;
 
         EVDButton = findViewById(R.id.EVDButton);
         NoConnection = findViewById(R.id.noConnection);
