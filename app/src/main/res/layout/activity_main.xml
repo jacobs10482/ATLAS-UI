@@ -212,7 +212,6 @@
                         android:layout_height="100dp"
                         android:contentDescription="Go to previous page"
                         android:src="@drawable/left_arrow"
-                        android:clickable="true"
                         android:scaleType="centerInside"
                         android:padding="20dp"
                         />
@@ -233,7 +232,6 @@
                         android:layout_height="100dp"
                         android:contentDescription="Go to next page"
                         android:src="@drawable/right_arrow"
-                        android:clickable="true"
                         android:scaleType="centerInside"
                         android:padding="20dp"
                         />

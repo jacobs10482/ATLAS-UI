@@ -6,81 +6,75 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <!-- Header Bar with Exit Button -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="20dp"
-        android:layout_marginVertical="10dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
+        <!-- Header Bar with Exit Button -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="70dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:paddingHorizontal="20dp"
+            android:layout_marginVertical="10dp">
 
             <Button
+                android:id="@+id/ExitButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:textSize="30dp"
-                android:text="Exit Operation" />
+                android:text="Exit Operation">
+            </Button>
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- VideoView Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="vertical"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/watchTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Watch this tutorial video to familiarize yourself with the procedure!"
+                android:textColor="@android:color/black"
+                android:textSize= "28dp"
+                android:textStyle="bold"
+                android:layout_margin="20dp"
+                />
+
+            <VideoView
+                android:id="@+id/videoView"
+                android:layout_width="400dp"
+                android:layout_height="400dp"
+                android:layout_margin="16dp"
+                android:background="@android:color/black"
+                android:layout_gravity="center" />
+
         </LinearLayout>
 
     </LinearLayout>
 
-    <!-- VideoView Section -->
-
     <!-- Button Section Below Content -->
-
-    <TextView
-        android:id="@+id/watchTextView"
+    <Button
+        android:id="@+id/nextSlide"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Watch this tutorial video to familiarize yourself with the procedure!"
-        android:textColor="@android:color/black"
-        android:textSize= "30sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="124dp" />
-
-    <VideoView
-        android:id="@+id/videoView"
-        android:layout_width="400dp"
-        android:layout_height="400dp"
-        android:layout_margin="16dp"
-        android:background="@android:color/black"
+        android:layout_height="100dp"
+        android:backgroundTint="@color/black"
+        android:text="Proceed to next step"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.59" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        app:layout_constraintTop_toBottomOf="@id/videoView">
-
-        <Button
-            android:id="@+id/nextSlide"
-            android:layout_width="200dp"
-            android:layout_height="100dp"
-            android:backgroundTint="@android:color/black"
-            android:text="Proceed to next slide"
-            android:textColor="@android:color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="50dp"
-            android:layout_marginEnd="1dp" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        android:padding="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="40dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
