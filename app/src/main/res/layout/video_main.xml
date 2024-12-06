@@ -53,8 +53,8 @@
 
             <VideoView
                 android:id="@+id/videoView"
-                android:layout_width="900dp"
-                android:layout_height="900dp"
+                android:layout_width="500dp"
+                android:layout_height="500dp"
                 android:layout_margin="16dp"
                 android:background="@android:color/black"
                 android:layout_gravity="center" />

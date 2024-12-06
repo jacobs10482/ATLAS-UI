@@ -32,7 +32,7 @@
         android:id="@+id/dialog_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Registration Error Exceeds 2mm Safe Limit! \nPlease Redo Calibration\nPress X to cancel"
+        android:text="Registration Error Exceeds 5mm Safe Limit! \nPlease Redo Calibration\nPress X to cancel"
         android:textSize="40sp"
         android:textColor="@android:color/black"
         android:layout_marginBottom="16dp"

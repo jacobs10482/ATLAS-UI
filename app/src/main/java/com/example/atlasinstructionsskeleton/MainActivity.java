@@ -522,7 +522,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (currentSlide instanceof AtlasSlide) {
             // disable right arrow
-            if (!isUnconnectedMode) {
+            if (!isUnconnectedMode && currentSlideIndex != 4) {
                 rightButton.setClickable(false);
                 rightButton.setColorFilter(Color.rgb(240, 240, 240), PorterDuff.Mode.SRC_IN);   // gray out arrow
             } else {
