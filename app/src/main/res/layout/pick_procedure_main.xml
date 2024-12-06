@@ -65,7 +65,7 @@
                     android:padding="20dp"
                     android:gravity="left"
                     android:textAllCaps="false"
-                    android:text="External Ventricular Drain Placement\n\nTreats: High intracranial pressure, lorem ipsum, dolor sit amet"
+                    android:text="External Ventricular Drain Placement\n\nTreats: High intracranial pressure,"
                     android:textSize="20sp" />
 
                 <Button
@@ -76,31 +76,9 @@
                     android:padding="20dp"
                     android:gravity="left"
                     android:textAllCaps="false"
-                    android:text="Tumor Biopsy (Work in Progress)\n\nUse: acquire tumor tissue for diagnosis, lorem ipsum"
+                    android:text="Additional Procedures Coming Soon!\n\nProposed Treatments: Tumor Biopsy, SEEG Placement, DBS Placement, etc."
                     android:textSize="20sp" />
 
-                <Button
-
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clickable="true"
-                    android:scaleType="centerInside"
-                    android:padding="20dp"
-                    android:gravity="left"
-                    android:textAllCaps="false"
-                    android:text="Corpus Callosotomy (WIP)\n\nTreats: Epilepsy, lorem ipsum, dolor sit amet"
-                    android:textSize="20sp" />
-
-                <Button
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clickable="true"
-                    android:scaleType="centerInside"
-                    android:padding="20dp"
-                    android:gravity="left"
-                    android:textAllCaps="false"
-                    android:text="Stereoelectroencephalography Electrode Placement (WIP)\n\nTreats: Consectetur adipiscing elit, sed do eiusmod, tempor incididunt"
-                    android:textSize="20sp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -110,7 +88,7 @@
         android:layout_width="wrap_content"
         android:layout_height="100dp"
         android:backgroundTint="@color/black"
-        android:text="Enter Unconnected Mode for EVD Placement"
+        android:text="Enter Unconnected Mode\nfor EVD Placement"
         android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
