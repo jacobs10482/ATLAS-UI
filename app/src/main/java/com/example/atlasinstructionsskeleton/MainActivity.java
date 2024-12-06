@@ -348,18 +348,35 @@ public class MainActivity extends AppCompatActivity {
     private void showVideo() {
         setContentView(R.layout.video_main);
 
-        // Initialize and set up the VideoView
+
         VideoView videoView = findViewById(R.id.videoView);
+
+
+        MediaController mediaController = new MediaController(videoView.getContext());
+        mediaController.setAnchorView(videoView); // Set where the controls should appear
+        videoView.setMediaController(mediaController);
+
+        videoView.setFocusable(true);
+        videoView.requestFocus();
+
+
         Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo);
+
         videoView.setVideoURI(videoUri);
 
-        // Add media controller for playback controls
-        MediaController mediaController = new MediaController(this);
-        videoView.setMediaController(mediaController);
-        mediaController.setAnchorView(videoView);
+        videoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Start playing the video when clicked
+                if (!videoView.isPlaying()) {
+                    videoView.start();
+                } else {
+                    videoView.pause();  // Pause if already playing
+                }
+            }
+        });
 
-        // Start playing the video
-        videoView.setOnPreparedListener(mediaPlayer -> videoView.start());
+
 
         // Add ExitButton functionality
         Button exitButton = findViewById(R.id.ExitButton);
