@@ -1,6 +1,9 @@
 package com.example.atlasinstructionsskeleton;
 
 import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -144,8 +147,7 @@ public class MainActivity extends AppCompatActivity {
 
         NoConnection = findViewById(R.id.noConnection);
         NoConnection.setOnClickListener(v -> {
-            EVDSlides();
-            setUnconnectedMode(true);
+            showVideo();
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -306,8 +308,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.pick_procedure_main);
 
         EVDButton = findViewById(R.id.EVDButton);
+        NoConnection = findViewById(R.id.noConnection);
 
         EVDButton.setOnClickListener(v -> {
+            EVDSlides();
+        });
+
+        NoConnection.setOnClickListener(v -> {
             showVideo();
         });
     }
@@ -320,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
         Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo);
         videoView.setVideoURI(videoUri);
 
-        // Optional: Add media controller for playback controls
+        // Add media controller for playback controls
         MediaController mediaController = new MediaController(this);
         videoView.setMediaController(mediaController);
         mediaController.setAnchorView(videoView);
@@ -328,10 +335,17 @@ public class MainActivity extends AppCompatActivity {
         // Start playing the video
         videoView.setOnPreparedListener(mediaPlayer -> videoView.start());
 
-        // Optional: Add a button to move to the next slide (e.g., EVD slides)
+        // Add ExitButton functionality
+        Button exitButton = findViewById(R.id.ExitButton);
+        exitButton.setOnClickListener(v -> {
+            voidOpenMenu();  // Navigate back to the menu screen
+        });
+
+        // Add a button to move to the next slide
         Button nextButton = findViewById(R.id.nextSlide);
         nextButton.setOnClickListener(v -> {
             EVDSlides(); // Transition to EVD slides
+            setUnconnectedMode(true);
         });
     }
 
@@ -440,6 +454,15 @@ public class MainActivity extends AppCompatActivity {
         instructionTextView.setText(currentSlide.instruction);
 
         if (currentSlide instanceof AtlasSlide) {
+            // disable right arrow
+            if (!isUnconnectedMode) {
+                rightButton.setClickable(false);
+                rightButton.setColorFilter(Color.rgb(240, 240, 240), PorterDuff.Mode.SRC_IN);   // gray out arrow
+            } else {
+                rightButton.setClickable(true);
+                rightButton.clearColorFilter();
+            }
+
             if (currentStep == 5) {
                 imageView.setVisibility(View.GONE);
                 atlas3DView.setVisibility(View.VISIBLE);
@@ -454,6 +477,9 @@ public class MainActivity extends AppCompatActivity {
                 progressBar.setOnClickListener(v -> handlePointTouch());
             }
         } else {
+            rightButton.setClickable(true);
+            rightButton.clearColorFilter();
+
             // gray out arrows
             if (currentStep == 1) {
                 leftButton.setVisibility(View.INVISIBLE);
@@ -515,8 +541,12 @@ public class MainActivity extends AppCompatActivity {
             }
         } else if (errorValue < 1) {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_green);
+            rightButton.setClickable(true);
+            rightButton.clearColorFilter();
         } else {
             registrationErrorBox.setBackgroundResource(R.drawable.registration_frame_yellow);
+            rightButton.setClickable(true);
+            rightButton.clearColorFilter();
         }
     }
 
