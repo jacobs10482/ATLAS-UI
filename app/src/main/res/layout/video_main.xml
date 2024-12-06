@@ -70,6 +70,7 @@
         android:layout_height="100dp"
         android:backgroundTint="@color/black"
         android:text="Proceed to Procedure"
+        android:textSize="18sp"
         android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
