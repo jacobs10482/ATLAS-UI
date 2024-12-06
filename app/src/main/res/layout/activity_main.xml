@@ -199,7 +199,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:textSize="40dp"
+                    android:textSize="36dp"
                     android:text="Touch the Probe to the green points on the patient’s skin. Once touched, the point will turn blue.">
                 </TextView>
                 <LinearLayout

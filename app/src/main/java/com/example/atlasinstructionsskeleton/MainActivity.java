@@ -199,7 +199,6 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         String receivedData = zmqSubSocket.recvStr();
                         if (receivedData != null) {
-                            Log.d(TAG, "Received data from ZeroMQ: " + receivedData);
                             // Pass the data to JavaScript
                             runOnUiThread(() -> passDataToJavaScript(receivedData));
                         }
@@ -411,8 +410,10 @@ public class MainActivity extends AppCompatActivity {
             button2.setOnClickListener(new View.OnClickListener() { // Go to redo calibration
                 @Override
                 public void onClick(View v) {
+                    currentSlideIndex = 2;
+                    updateSlide();
+                    atlas3DView.evaluateJavascript("resetRegistration();", null);
                     dialog.dismiss();
-                    handleLeft();
                 }
             });
 
