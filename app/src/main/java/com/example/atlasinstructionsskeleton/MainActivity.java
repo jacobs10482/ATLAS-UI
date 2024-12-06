@@ -247,8 +247,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize and set up the VideoView
         VideoView videoView = findViewById(R.id.videoView);
-        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo.mp4);
-        videoView.setVideoURI(videoUri);
+        // Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.atlas_demo);
+        videoView.setVideoURI(Uri.parse("res/raw/atlas_demo"));
 
         // Optional: Add media controller for playback controls
         MediaController mediaController = new MediaController(this);
