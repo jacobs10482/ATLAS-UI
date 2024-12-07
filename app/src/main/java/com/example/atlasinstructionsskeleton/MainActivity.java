@@ -309,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
         registrationErrorValue = findViewById(R.id.registrationErrorValue);
 
         slides = new ArrayList<>();
-        slides.add(new Slide("Table Set Up", "Place all necessary equipment on the surgical table, and mount the tablet within view.", R.drawable.table_diagram));
+        slides.add(new Slide("Table Set Up", "Place all necessary equipment on the surgical table, and mount the tablet within view.", R.drawable.updated_table_diagram));
         slides.add(new Slide("Burr Hole", "Create a burr hole at Kocher's point using the cranial access kit. Then attach ATLAS at the burr hole.", R.drawable.kochers_point_diagram));
         slides.add(new AtlasSlide("Calibration", "Touch the probe to the green points on the patient’s skin. Once touched, the point will turn blue."));
         slides.add(new AtlasSlide("Fine Tune", "Trace along the surface of the nose, cheekbones, and head to improve accuracy."));
