@@ -341,7 +341,6 @@ public class MainActivity extends AppCompatActivity {
         // Initialize the TextView
         TextView instructionTextView = findViewById(R.id.instructionTextView);
 
-        // Create a SpannableStringBuilder for formatting
         SpannableStringBuilder instructions = new SpannableStringBuilder();
         instructions.append("1. Turn on ");
         instructions.append("ATLAS", new StyleSpan(Typeface.BOLD), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -355,7 +354,6 @@ public class MainActivity extends AppCompatActivity {
 
         instructions.append("4. Wait for the connection to establish.");
 
-        // Set the formatted text to the TextView
         instructionTextView.setText(instructions);
 
         Button nextButton = findViewById(R.id.nextButton);

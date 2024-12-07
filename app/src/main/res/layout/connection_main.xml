@@ -74,7 +74,6 @@
                         android:textColor="@color/black"
                         android:text="ATLAS Wireless Network Setup"
                         />
-
                     <TextView
                         android:id="@+id/instructionTextView"
                         android:layout_width="wrap_content"
@@ -87,7 +86,6 @@
                         android:textSize="25sp"
                         android:ellipsize="none"
                         android:singleLine="false" />
-
                     <Button
                         android:id="@+id/nextButton"
                         android:layout_width="wrap_content"
