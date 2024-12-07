@@ -20,6 +20,7 @@
             android:paddingHorizontal="20dp"
             android:layout_marginVertical="10dp">
             <Button
+                android:id="@+id/ExitButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:textSize="30dp"
@@ -34,66 +35,83 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_weight="1">
 
-            <!-- Left Side Image Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/black"
+                android:gravity="center"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:layout_marginHorizontal="20dp"
+                android:padding="10dp"
+                android:text="Bring your device to ATLAS' RFID scanner to connect" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:orientation="horizontal"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="top"
-                android:paddingRight="30dp"
-                android:paddingLeft="30dp"
-                android:layout_marginBottom="30dp">
+                android:layout_margin="20dp">
 
-                <TextView
-                    android:id="@+id/titleTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/black"
-                    android:gravity="center"
-                    android:textSize="40sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/white"
-                    android:text="Bring your device to ATLAS' RFID scanner to connect" />
-
-                <EditText
-                    android:id="@+id/ipAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Enter the IP Address of Atlas here"
-                    android:padding="10dp"
-                    android:layout_marginTop="10dp"
-                    android:gravity = "center"
-                    android:background="@android:color/white"
-                    android:textSize="40sp"
-                    android:textColor="@android:color/black"
-                    android:inputType="text" />
-
-                <TextView
-                    android:id="@+id/instructionTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textSize="28sp"
-                    android:text="Waiting for connection..."
-                    android:padding="10dp"
-                    android:background="@android:color/transparent"
-                    android:layout_marginTop="20dp" /> <!-- Adjusted marginTop -->
-
+                <!-- Left Side Instruction Section -->
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.5"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:text="ATLAS Wireless Network Setup"
+                        />
+
+                    <TextView
+                        android:id="@+id/instructionTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp"
+                        android:gravity="start"
+                        android:lineSpacingExtra="8dp"
+                        android:padding="20dp"
+                        android:textColor="@color/black"
+                        android:textSize="25sp"
+                        android:ellipsize="none"
+                        android:singleLine="false" />
+
+                    <Button
+                        android:id="@+id/nextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Proceed to Procedure"
+                        android:textSize="25sp"
+                        android:padding="20dp"
+                        android:textColor="@android:color/white"
+                        android:backgroundTint="@color/black"
+                        />
+                </LinearLayout>
+
+                <!-- Image Section -->
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:gravity="center"
+                    android:layout_weight="1"
                     android:orientation="vertical"
-                    android:paddingHorizontal="100dp">
-
+                    android:paddingHorizontal="10dp">
 
                     <ImageView
                         android:id="@+id/imageView"
-                        android:layout_width="match_parent"
+                        android:layout_width="1000dp"
                         android:layout_height="1000dp"
                         android:adjustViewBounds="true"
                         android:padding="-300dp"
@@ -101,21 +119,6 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent" />
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/interactiveWrapper"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <View
-                            android:id="@+id/interactiveView"
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="@color/black"
-                            android:visibility="gone"
-                            app:layout_constraintDimensionRatio="1:1"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -133,10 +136,12 @@
                 android:backgroundTint="@color/black"
                 android:text="Use app without connecting"
                 android:textColor="@color/white"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="50dp"
-                android:layout_marginEnd="1dp" />
+                android:padding="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginBottom="20dp" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </LinearLayout>

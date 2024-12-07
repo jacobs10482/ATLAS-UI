@@ -4,10 +4,15 @@ import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Html;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.StyleSpan;
 import android.util.Log; // Added for logging
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -15,6 +20,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -163,8 +169,7 @@ public class MainActivity extends AppCompatActivity {
         EVDButton = findViewById(R.id.EVDButton);
 
         EVDButton.setOnClickListener(v -> {
-            EVDSlides();
-            setUnconnectedMode(false);
+            connectionSetup();
         });
 
         NoConnection = findViewById(R.id.noConnection);
@@ -329,6 +334,46 @@ public class MainActivity extends AppCompatActivity {
         initializeZeroMQ();
     }
 
+    private void connectionSetup() {
+        setContentView(R.layout.connection_main);
+        isUnconnectedMode = false;
+
+        // Initialize the TextView
+        TextView instructionTextView = findViewById(R.id.instructionTextView);
+
+        // Create a SpannableStringBuilder for formatting
+        SpannableStringBuilder instructions = new SpannableStringBuilder();
+        instructions.append("1. Turn on ");
+        instructions.append("ATLAS", new StyleSpan(Typeface.BOLD), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        instructions.append(" device.\n");
+
+        instructions.append("2. Swipe down from top of the screen to open Quick Settings.\n");
+
+        instructions.append("3. Tap ");
+        instructions.append("Internet -> 'Atlas-Device'", new StyleSpan(Typeface.BOLD), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        instructions.append(", and connect to network.\n");
+
+        instructions.append("4. Wait for the connection to establish.");
+
+        // Set the formatted text to the TextView
+        instructionTextView.setText(instructions);
+
+        Button nextButton = findViewById(R.id.nextButton);
+        nextButton.setOnClickListener(v -> {
+            EVDSlides();
+        });
+
+        Button noConnectionButton = findViewById(R.id.noConnection);
+        noConnectionButton.setOnClickListener(v -> {
+            setDialog(2);
+        });
+
+        Button exitButton = findViewById(R.id.ExitButton);
+        exitButton.setOnClickListener(v -> {
+            setDialog(3);
+        });
+    }
+
     private void voidOpenMenu() {
         setContentView(R.layout.pick_procedure_main);
         isUnconnectedMode = false;
@@ -337,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
         NoConnection = findViewById(R.id.noConnection);
 
         EVDButton.setOnClickListener(v -> {
-            EVDSlides();
+            connectionSetup();
         });
 
         NoConnection.setOnClickListener(v -> {
@@ -383,7 +428,7 @@ public class MainActivity extends AppCompatActivity {
         // Add ExitButton functionality
         Button exitButton = findViewById(R.id.ExitButton);
         exitButton.setOnClickListener(v -> {
-            voidOpenMenu();  // Navigate back to the menu screen
+            setDialog(3);
         });
 
         // Add a button to move to the next slide
@@ -507,6 +552,20 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                     showVideo();
                 }
+            });
+
+            dialog.show();
+        } else if (x == 3) {
+            dialog.setContentView(R.layout.error1);
+
+            Button button1 = dialog.findViewById(R.id.dialog_button_1);
+            Button button2 = dialog.findViewById(R.id.dialog_button_2);
+
+            button1.setOnClickListener(v -> dialog.dismiss());
+
+            button2.setOnClickListener(v -> {
+                dialog.dismiss();
+                voidOpenMenu(); // make sure return to procedure menu
             });
 
             dialog.show();
