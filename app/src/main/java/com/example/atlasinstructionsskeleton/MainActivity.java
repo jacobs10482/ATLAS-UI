@@ -349,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
         instructions.append("2. Swipe down from top of the screen to open Quick Settings.\n");
 
         instructions.append("3. Tap ");
-        instructions.append("Internet -> 'Atlas-Device'", new StyleSpan(Typeface.BOLD), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        instructions.append("Internet -> 'PiLocalNetwork'", new StyleSpan(Typeface.BOLD), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         instructions.append(", and connect to network.\n");
 
         instructions.append("4. Wait for the connection to establish.");

@@ -48,7 +48,7 @@
                 android:textColor="@color/white"
                 android:layout_marginHorizontal="20dp"
                 android:padding="10dp"
-                android:text="Bring your device to ATLAS' RFID scanner to connect" />
+                android:text="Connect to Atlas Wireless Network" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -81,17 +81,17 @@
                         android:layout_margin="10dp"
                         android:gravity="start"
                         android:lineSpacingExtra="8dp"
-                        android:padding="20dp"
+                        android:padding="10dp"
                         android:textColor="@color/black"
-                        android:textSize="25sp"
+                        android:textSize="20sp"
                         android:ellipsize="none"
                         android:singleLine="false" />
                     <Button
                         android:id="@+id/nextButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_height="70dp"
                         android:text="Proceed to Procedure"
-                        android:textSize="25sp"
+                        android:textSize="20sp"
                         android:padding="20dp"
                         android:textColor="@android:color/white"
                         android:backgroundTint="@color/black"
@@ -109,8 +109,8 @@
 
                     <ImageView
                         android:id="@+id/imageView"
-                        android:layout_width="1000dp"
-                        android:layout_height="1000dp"
+                        android:layout_width="800dp"
+                        android:layout_height="800dp"
                         android:adjustViewBounds="true"
                         android:padding="-300dp"
                         android:src="@drawable/connection_mockup"
@@ -134,7 +134,7 @@
                 android:backgroundTint="@color/black"
                 android:text="Use app without connecting"
                 android:textColor="@color/white"
-                android:textSize="18sp"
+                android:textSize="17sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:padding="20dp"
